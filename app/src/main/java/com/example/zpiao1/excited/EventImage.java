@@ -7,7 +7,8 @@ public class EventImage {
     private String mDate;
     private String mTitle;
     private boolean mStarred;
-    private boolean mDeleted;
+    private boolean mRemoved;
+    private int mPosition;
 
     public EventImage(int imageId, String date, String title) {
         mImageId = imageId;
@@ -37,13 +38,20 @@ public class EventImage {
         Log.v(this.getClass().getName(), getTitle() + " is starred");
     }
 
-    public boolean isDeleted() {
-        return mDeleted;
+    public boolean isRemoved() {
+        return mRemoved;
     }
 
-    public void setDeleted(boolean deleted) {
-        mDeleted = deleted;
-        Log.v(this.getClass().getName(), getTitle() + " is deleted");
+    public void setRemoved(boolean deleted) {
+        mRemoved = deleted;
+        Log.v(this.getClass().getName(), getTitle() + " is removed");
     }
 
+    public int getPosition() {
+        return mPosition;
+    }
+
+    public void setPosition(int position) {
+        mPosition = position;
+    }
 }

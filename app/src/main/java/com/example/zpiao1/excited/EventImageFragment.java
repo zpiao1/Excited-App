@@ -1,14 +1,15 @@
 package com.example.zpiao1.excited;
 
 
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 
 /**
@@ -16,9 +17,12 @@ import android.widget.TextView;
  */
 public class EventImageFragment extends Fragment {
 
-    private final String LOG_TAG = getClass().getSimpleName();
+    private static final String LOG_TAG = EventImageFragment.class.getSimpleName();
 
     private EventImage mEventImage;
+    private View mRootView;
+    private LayoutInflater mInflater;
+    private ViewGroup mContainer;
 
     public EventImageFragment() {
         // Required empty public constructor
@@ -27,46 +31,44 @@ public class EventImageFragment extends Fragment {
     public static EventImageFragment getInstance(EventImage eventImage) {
         EventImageFragment fragment = new EventImageFragment();
         fragment.mEventImage = eventImage;
-        Bundle args = new Bundle();
-        args.putInt("imageId", eventImage.getImageId());
-        args.putString("date", eventImage.getDate());
-        args.putString("title", eventImage.getTitle());
-        fragment.setArguments(args);
         return fragment;
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_event_image, container, false);
-
-        Bundle args = getArguments();
-        int imageId = args.getInt("imageId");
-        String date = args.getString("date");
-        String title = args.getString("title");
-
-        ImageView eventImage = (ImageView) rootView.findViewById(R.id.event_image);
-        TextView dateText = (TextView) rootView.findViewById(R.id.date_text);
-        TextView titleText = (TextView) rootView.findViewById(R.id.title_text);
-
-        eventImage.setImageResource(imageId);
-        dateText.setText(date);
-        titleText.setText(title);
-
-        rootView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View view) {
-                View.DragShadowBuilder shadowBuilder = new View.DragShadowBuilder(view);
-                // Pass the reference to this object as the local state
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
-                    view.startDragAndDrop(null, shadowBuilder, mEventImage, View.DRAG_FLAG_GLOBAL);
-                else
-                    view.startDrag(null, shadowBuilder, mEventImage, View.DRAG_FLAG_GLOBAL);
-                return true;
-            }
-        });
-
-        return rootView;
+        mInflater = inflater;
+        mContainer = container;
+        createRootView();
+        setRootViewSwipeListener();
+        return mRootView;
     }
 
+    private void createRootView() {
+        mRootView = mInflater.inflate(R.layout.fragment_event_image, mContainer, false);
+        ImageView eventImage = (ImageView) mRootView.findViewById(R.id.event_image);
+        TextView dateText = (TextView) mRootView.findViewById(R.id.date_text);
+        TextView titleText = (TextView) mRootView.findViewById(R.id.title_text);
+
+        eventImage.setImageResource(mEventImage.getImageId());
+        dateText.setText(mEventImage.getDate());
+        titleText.setText(mEventImage.getTitle());
+        Log.v(LOG_TAG, String.format("%s original x = %f", mEventImage.getTitle(), mRootView.getX()));
+    }
+
+    private void setRootViewSwipeListener() {
+        mRootView.setOnTouchListener(new OnSwipeListener() {
+            @Override
+            public void onSwipeDown() {
+                ((MainActivity) getActivity()).onEventImageRemoved(mEventImage.getPosition());
+            }
+
+            @Override
+            public void onSwipeUp() {
+                Toast.makeText(getActivity(), String.format("%s is added to Favourites.",
+                        mEventImage.getTitle()), Toast.LENGTH_SHORT).show();
+                mEventImage.setStarred(true);
+            }
+        });
+    }
 }

@@ -13,6 +13,8 @@ public class EventImagePagerAdapter extends FragmentStatePagerAdapter {
     public EventImagePagerAdapter(FragmentManager fm, List<EventImage> eventImages) {
         super(fm);
         mEventImages = eventImages;
+        for (int i = 0; i < mEventImages.size(); ++i)
+            mEventImages.get(i).setPosition(i);
     }
 
     @Override
