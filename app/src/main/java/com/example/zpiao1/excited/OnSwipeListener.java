@@ -1,6 +1,7 @@
 package com.example.zpiao1.excited;
 
-import android.util.Log;
+import android.app.Activity;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -13,18 +14,22 @@ public abstract class OnSwipeListener implements View.OnTouchListener {
     private float mLastViewY;
     private float mLastTouchY;
     private float mStartTouchY;
+    private MainActivity mMainActivity;
+    private GestureDetector mGestureDetector;
 
-    public OnSwipeListener() {
+    public OnSwipeListener(Activity activity) {
+        mMainActivity = (MainActivity) activity;
+        mGestureDetector = new GestureDetector(activity, new SwipeGestureListener());
     }
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
         int action = motionEvent.getAction();
+        mGestureDetector.onTouchEvent(motionEvent);
         switch (action) {
             case MotionEvent.ACTION_DOWN:
                 mLastViewY = view.getY();
                 mStartTouchY = mLastTouchY = motionEvent.getY();
-                Log.v(LOG_TAG, String.format("Original X = %f", view.getX()));
                 return true;
             case MotionEvent.ACTION_MOVE: {
                 float touchY = motionEvent.getY();
@@ -32,26 +37,50 @@ public abstract class OnSwipeListener implements View.OnTouchListener {
                 mLastViewY += dy;
                 view.setY(mLastViewY);
                 mLastTouchY = touchY;
+                // Change the star/garbage background color
+                mMainActivity.changeIconGradually(mStartTouchY, touchY);
                 return true;
             }
             case MotionEvent.ACTION_UP: {
-                float touchY = motionEvent.getY();
-                float dy = touchY - mStartTouchY;
-                if (dy > 10) {
-                    view.setY(0);
-                    onSwipeDown();
-                } else if (dy < -10) {
-                    view.setY(0);
-                    onSwipeUp();
-                }
+                view.setY(0);
+                mMainActivity.resetIcons();
                 return true;
             }
             default:
-                return false;
+                return true;
         }
     }
 
     abstract public void onSwipeDown();
 
     abstract public void onSwipeUp();
+
+    abstract public void onClick();
+
+    private class SwipeGestureListener extends GestureDetector.SimpleOnGestureListener {
+
+        private static final int SWIPE_THRESHOLD = 30;
+
+        @Override
+        public boolean onDown(MotionEvent e) {
+            return true;
+        }
+
+        @Override
+        public boolean onSingleTapUp(MotionEvent e) {
+            onClick();
+            return true;
+        }
+
+        @Override
+        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+            float dy = e2.getY() - e1.getY();
+            if (Math.abs(dy) > SWIPE_THRESHOLD)
+                if (dy > 10)
+                    onSwipeDown();
+                else if (dy < -10)
+                    onSwipeUp();
+            return true;
+        }
+    }
 }

@@ -1,7 +1,5 @@
 package com.example.zpiao1.excited;
 
-import android.util.Log;
-
 public class EventImage {
     private int mImageId;
     private String mDate;
@@ -35,7 +33,6 @@ public class EventImage {
 
     public void setStarred(boolean starred) {
         mStarred = starred;
-        Log.v(this.getClass().getName(), getTitle() + " is starred");
     }
 
     public boolean isRemoved() {
@@ -44,7 +41,6 @@ public class EventImage {
 
     public void setRemoved(boolean deleted) {
         mRemoved = deleted;
-        Log.v(this.getClass().getName(), getTitle() + " is removed");
     }
 
     public int getPosition() {

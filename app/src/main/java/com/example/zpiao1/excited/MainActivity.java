@@ -1,5 +1,6 @@
 package com.example.zpiao1.excited;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -22,10 +23,16 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-    IconAdapter mIconAdapter;
-    EventImagePagerAdapter mPagerAdapter;
-    ImageView[] mDotsIndicator;
-    ArrayList<EventImage> mEventImages;
+    private static final float Y_CHANGE_THRESHOLD = 300f;
+    private static final String LOG_TAG = MainActivity.class.getSimpleName();
+    private static final int TRANSPARENT_COLOR = 0x00000000;
+
+    private IconAdapter mIconAdapter;
+    private EventImagePagerAdapter mPagerAdapter;
+    private ImageView[] mDotsIndicator;
+    private ArrayList<EventImage> mEventImages;
+    private int mGarbageIconDefaultHeight;
+    private int mStarIconDefaultHeight;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,6 +53,9 @@ public class MainActivity extends AppCompatActivity
         loadGridView();
         createFakeData();
         loadImageViewPager();
+
+        mGarbageIconDefaultHeight = findViewById(R.id.garbage_image).getLayoutParams().height;
+        mStarIconDefaultHeight = findViewById(R.id.star_image).getLayoutParams().height;
     }
 
     @Override
@@ -128,6 +138,7 @@ public class MainActivity extends AppCompatActivity
 
         // Create the dot indicators
         LinearLayout pagerIndicator = (LinearLayout) findViewById(R.id.pager_indicator);
+        // TODO might need to add background color
         pagerIndicator.removeAllViewsInLayout();
         mDotsIndicator = new ImageView[mEventImages.size()];
 
@@ -176,12 +187,63 @@ public class MainActivity extends AppCompatActivity
                 "Sep 15", "Free Yoga & Tea Session with Dr. Trish Corley"));
     }
 
-    public void onEventImageRemoved(int position) {
+    public void removeEventImage(int position) {
         EventImage eventImage = mEventImages.get(position);
         eventImage.setRemoved(true);
         Toast.makeText(this, String.format("%s is removed.", eventImage.getTitle()),
                 Toast.LENGTH_SHORT).show();
         mEventImages.remove(position);
         loadImageViewPager();
+    }
+
+    public void changeIconGradually(float startTouchY, float currentTouchY) {
+        float dy = currentTouchY - startTouchY;
+        // Swiping down, should change the garbage icon
+        ImageView iconImage;
+        int color;
+        int defaultHeight;
+        float scale = Math.abs(dy) / Y_CHANGE_THRESHOLD;
+        if (scale > 1)
+            scale = 1;
+        if (dy > 10) {
+            iconImage = (ImageView) findViewById(R.id.garbage_image);
+            color = getResources().getColor(R.color.lightRed);
+            defaultHeight = mGarbageIconDefaultHeight;
+            changeIconGraduallyHelper(iconImage, color, defaultHeight, scale);
+        } else if (dy < -10) {
+            iconImage = (ImageView) findViewById(R.id.star_image);
+            color = getResources().getColor(R.color.lightGreen);
+            defaultHeight = mStarIconDefaultHeight;
+            changeIconGraduallyHelper(iconImage, color, defaultHeight, scale);
+        }
+    }
+
+    private void changeIconGraduallyHelper(ImageView iconImage, int color, int defaultHeight, float scale) {
+        // Change the size of the ImageView
+        ViewGroup.LayoutParams params = iconImage.getLayoutParams();
+        params.height = (int) (defaultHeight * (1 + scale));
+        iconImage.setLayoutParams(params);
+
+        // Change the color of the ImageView
+        int alpha = (int) (0xFF * 0.5f * scale);
+        int red = Color.red(color);
+        int green = Color.green(color);
+        int blue = Color.blue(color);
+        iconImage.setBackgroundColor(Color.argb(alpha, red, green, blue));
+    }
+
+    public void resetIcons() {
+        ImageView garbageImage = (ImageView) findViewById(R.id.garbage_image);
+        ImageView startImage = (ImageView) findViewById(R.id.star_image);
+        resetIconsHelper(garbageImage, mGarbageIconDefaultHeight);
+        resetIconsHelper(startImage, mStarIconDefaultHeight);
+    }
+
+    private void resetIconsHelper(ImageView iconImage, int defaultHeight) {
+        ViewGroup.LayoutParams params = iconImage.getLayoutParams();
+        params.height = defaultHeight;
+        iconImage.setLayoutParams(params);
+
+        iconImage.setBackgroundColor(TRANSPARENT_COLOR);
     }
 }

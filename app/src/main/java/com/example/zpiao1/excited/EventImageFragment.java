@@ -1,9 +1,9 @@
 package com.example.zpiao1.excited;
 
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -53,14 +53,13 @@ public class EventImageFragment extends Fragment {
         eventImage.setImageResource(mEventImage.getImageId());
         dateText.setText(mEventImage.getDate());
         titleText.setText(mEventImage.getTitle());
-        Log.v(LOG_TAG, String.format("%s original x = %f", mEventImage.getTitle(), mRootView.getX()));
     }
 
     private void setRootViewSwipeListener() {
-        mRootView.setOnTouchListener(new OnSwipeListener() {
+        mRootView.setOnTouchListener(new OnSwipeListener(getActivity()) {
             @Override
             public void onSwipeDown() {
-                ((MainActivity) getActivity()).onEventImageRemoved(mEventImage.getPosition());
+                ((MainActivity) getActivity()).removeEventImage(mEventImage.getPosition());
             }
 
             @Override
@@ -69,6 +68,13 @@ public class EventImageFragment extends Fragment {
                         mEventImage.getTitle()), Toast.LENGTH_SHORT).show();
                 mEventImage.setStarred(true);
             }
+
+            @Override
+            public void onClick() {
+                Intent intent = new Intent(getActivity(), EventDetailActivity.class);
+                startActivity(intent);
+            }
         });
     }
+
 }
