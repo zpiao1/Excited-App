@@ -58,7 +58,7 @@
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/detail_venue"
+                android:id="@+id/detail_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Thursday, September 15"
@@ -80,6 +80,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/detail_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="7:45PM - 9.15PM"
@@ -102,6 +103,7 @@
                 android:textStyle="bold" />
 
             <TextView
+                android:id="@+id/detail_venue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="yoga in common, 10 Petain Rd, Singapore 208089"
@@ -129,7 +131,7 @@
                 android:src="@drawable/ic_directions_car_black" />
 
             <TextView
-                android:id="@+id/detail_car_time"
+                android:id="@+id/detail_driving_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="15 min"

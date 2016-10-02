@@ -10,6 +10,7 @@
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
     <string name="google_maps_key">AIzaSyB4YA-dPQzhhKRiwgy2odLVpLkc9cLmM0k</string>
+    <string name="google_maps_directions_key">AIzaSyA5yqnAAWqGmeIPMPq7-bunCnEXCu-aBq4</string>
     <string name="title_activity_event_detail">EventDetailActivity</string>
     <string name="venue">Venue: </string>
     <string name="time">Time: </string>
