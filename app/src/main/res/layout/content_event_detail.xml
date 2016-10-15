@@ -22,9 +22,10 @@
             android:id="@+id/detail_event_image"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            android:layout_gravity="center"
             android:adjustViewBounds="true"
-            android:src="@mipmap/free_yoga_and_tea_session_with_dr_trish_corley" />
+            android:scaleType="fitCenter"
+            tools:src="@mipmap/free_yoga_and_tea_session_with_dr_trish_corley" />
 
         <TextView
             android:id="@+id/detail_title"
@@ -32,16 +33,16 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:layout_marginTop="8dp"
-            android:text="Free Yoga &amp; Tea Session with Dr. Trish Corley"
             android:textAllCaps="true"
-            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large" />
+            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Large"
+            tools:text="Free Yoga &amp; Tea Session with Dr. Trish Corley" />
 
         <TextView
             android:id="@+id/detail_category"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Sports"
-            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium" />
+            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+            tools:text="Sports" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -62,8 +63,8 @@
                 android:id="@+id/detail_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Thursday, September 15"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium" />
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+                tools:text="Thursday, September 15" />
         </LinearLayout>
 
         <LinearLayout
@@ -84,8 +85,8 @@
                 android:id="@+id/detail_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="7:45PM - 9.15PM"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium" />
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+                tools:text="7:45PM - 9.15PM" />
         </LinearLayout>
 
         <LinearLayout
@@ -107,8 +108,8 @@
                 android:id="@+id/detail_venue"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="yoga in common, 10 Petain Rd, Singapore 208089"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium" />
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+                tools:text="yoga in common, 10 Petain Rd, Singapore 208089" />
         </LinearLayout>
 
         <com.google.android.gms.maps.MapView
@@ -135,8 +136,8 @@
                 android:id="@+id/detail_driving_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="15 min"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium" />
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+                tools:text="15 min" />
         </LinearLayout>
 
         <LinearLayout
@@ -156,8 +157,8 @@
                 android:id="@+id/detail_transit_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="30 min"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium" />
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
+                tools:text="30 min" />
         </LinearLayout>
 
     </LinearLayout>

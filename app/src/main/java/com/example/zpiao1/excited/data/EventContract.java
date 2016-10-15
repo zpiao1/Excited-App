@@ -5,10 +5,10 @@ import android.net.Uri;
 import android.provider.BaseColumns;
 
 public class EventContract {
-    public static final String CONTENT_AUTHORITY = "com.example.zpiao1.excited";
+    static final String CONTENT_AUTHORITY = "com.example.zpiao1.excited";
+    static final String PATH_EVENTS = "events";
     // "content://com.example.zpiao1.excited"
-    public static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
-    public static final String PATH_EVENTS = "events";
+    private static final Uri BASE_CONTENT_URI = Uri.parse("content://" + CONTENT_AUTHORITY);
 
     private EventContract() {
     }
@@ -17,9 +17,6 @@ public class EventContract {
 
         // "content://com.example.zpiao1.excited/events"
         public static final Uri CONTENT_URI = Uri.withAppendedPath(BASE_CONTENT_URI, PATH_EVENTS);
-
-        public static final String TABLE_NAME = "events";
-
         public static final String COLUMN_IMAGE_ID = "image_id";
         public static final String COLUMN_DATE = "date";
         public static final String COLUMN_TITLE = "title";
@@ -29,26 +26,25 @@ public class EventContract {
         public static final String COLUMN_END_TIME = "end_time";
         public static final String COLUMN_CATEGORY = "category";
         public static final String COLUMN_VENUE = "venue";
-
         public static final int CATEGORY_MOVIE = 0;
         public static final int CATEGORY_ART = 1;
         public static final int CATEGORY_SPORTS = 2;
         public static final int CATEGORY_NIGHTLIFE = 3;
         public static final int CATEGORY_KIDS = 4;
         public static final int CATEGORY_EXPO = 5;
-
         public static final int BOOLEAN_TRUE = 1;
         public static final int BOOLEAN_FALSE = 0;
+        static final String TABLE_NAME = "events";
 
-        public static boolean isValidBoolean(int booleanValue) {
+        static boolean isValidBoolean(int booleanValue) {
             return booleanValue == BOOLEAN_TRUE || booleanValue == BOOLEAN_FALSE;
         }
 
-        public static boolean isValidCategory(int categoryValue) {
+        static boolean isValidCategory(int categoryValue) {
             return categoryValue >= 0 && categoryValue <= 6;
         }
 
-        public static boolean isValidImageId(int imageIdValue) {
+        static boolean isValidImageId(int imageIdValue) {
             return imageIdValue >= 0;
         }
 
@@ -71,7 +67,7 @@ public class EventContract {
             return values;
         }
 
-        public String getCatetoryFromId(int categoryId) {
+        public static String getCatetoryFromId(int categoryId) {
             switch (categoryId) {
                 case CATEGORY_MOVIE:
                     return "Movie";

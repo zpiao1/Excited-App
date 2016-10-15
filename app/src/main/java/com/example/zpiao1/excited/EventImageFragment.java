@@ -68,25 +68,26 @@ public class EventImageFragment extends Fragment {
             @Override
             public void onSwipeDown() {
                 // Get the Uri for this fragment, and let MainActivity handle the removal
-                Uri uri = ContentUris.withAppendedId(EventEntry.CONTENT_URI, mRowId);
-                ((MainActivity) getActivity()).onImageRemoved(uri);
+                ((MainActivity) getActivity()).onImageRemoved(getUriOfImage());
             }
 
             @Override
             public void onSwipeUp() {
                 // Get the URI for the fragment, and let MainActivity handle the starring
-                Uri uri = ContentUris.withAppendedId(EventEntry.CONTENT_URI, mRowId);
-                ((MainActivity) getActivity()).onImageStarred(uri);
+                ((MainActivity) getActivity()).onImageStarred(getUriOfImage());
             }
 
             @Override
             public void onClick() {
                 // Start a EventDetailActivity with the data in the Uri
-                Uri uri = ContentUris.withAppendedId(EventEntry.CONTENT_URI, mRowId);
                 Intent intent = new Intent(getActivity(), EventDetailActivity.class);
-                intent.setData(uri);
+                intent.setData(getUriOfImage());
                 startActivity(intent);
             }
         });
+    }
+
+    private Uri getUriOfImage() {
+        return ContentUris.withAppendedId(EventEntry.CONTENT_URI, mRowId);
     }
 }

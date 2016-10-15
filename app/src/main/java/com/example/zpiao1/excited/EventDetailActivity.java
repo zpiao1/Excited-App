@@ -2,9 +2,11 @@ package com.example.zpiao1.excited;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -26,6 +28,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.zpiao1.excited.data.EventContract.EventEntry;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -49,8 +52,24 @@ public class EventDetailActivity extends AppCompatActivity
         GoogleApiClient.OnConnectionFailedListener {
 
     private static final String LOG_TAG = EventDetailActivity.class.getSimpleName();
+    private static final String[] PROJECTION = new String[]{
+            EventEntry._ID,
+            EventEntry.COLUMN_IMAGE_ID,
+            EventEntry.COLUMN_TITLE,
+            EventEntry.COLUMN_CATEGORY,
+            EventEntry.COLUMN_DATE,
+            EventEntry.COLUMN_START_TIME,
+            EventEntry.COLUMN_END_TIME,
+            EventEntry.COLUMN_VENUE
+    };
+    private static final int INDEX_IMAGE_ID = 1;
+    private static final int INDEX_TITLE = 2;
+    private static final int INDEX_CATEGORY = 3;
+    private static final int INDEX_DATE = 4;
+    private static final int INDEX_START_TIME = 5;
+    private static final int INDEX_END_TIME = 6;
+    private static final int INDEX_VENUE = 7;
     private static int PERMISSIONS_REQUEST_FINE_LOCATION = 0;
-
     private MapView mMapView;
     private GoogleApiClient mGoogleApiClient = null;
     private Location mLastLocation = null;
@@ -58,12 +77,14 @@ public class EventDetailActivity extends AppCompatActivity
     private LatLng mCurrentLatLng;
     private LatLng mDestinationLatLng;
 
-    private int mImageId;
-    private String mTitle;
-    private String mDate;
-    private String mCategory;
-    private String mTime;
-    private String mVenue;
+    private ImageView mDetailEventImage;
+    private TextView mDetailTitle;
+    private TextView mDetailCategory;
+    private TextView mDetailDate;
+    private TextView mDetailTime;
+    private TextView mDetailVenue;
+
+    private Cursor mCursor;
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -103,13 +124,20 @@ public class EventDetailActivity extends AppCompatActivity
 
         mMapView.getMapAsync(this);
 
-        Bundle extras = getIntent().getExtras();
-        mImageId = extras.getInt("imageId");
-        mTitle = extras.getString("title");
-        mDate = extras.getString("date");
-        mCategory = extras.getString("category");
-        mTime = extras.getString("time");
-        mVenue = extras.getString("venue");
+        mDetailEventImage = (ImageView) findViewById(R.id.detail_event_image);
+        mDetailTitle = (TextView) findViewById(R.id.detail_title);
+        mDetailCategory = (TextView) findViewById(R.id.detail_category);
+        mDetailDate = (TextView) findViewById(R.id.detail_date);
+        mDetailTime = (TextView) findViewById(R.id.detail_time);
+        mDetailVenue = (TextView) findViewById(R.id.detail_venue);
+
+        Uri queryUri = getIntent().getData();
+        Log.v(LOG_TAG, "queryUri: " + queryUri);
+        mCursor = getContentResolver().query(queryUri, PROJECTION, null, null, null);
+        if (mCursor != null)
+            mCursor.moveToFirst();
+        else
+            throw new RuntimeException("Query failed, mCursor is null");
     }
 
     @Override
@@ -145,21 +173,22 @@ public class EventDetailActivity extends AppCompatActivity
     }
 
     private void tryToRequestPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
-                PackageManager.PERMISSION_GRANTED)
-            ActivityCompat.requestPermissions(this, new
-                            String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
-                    PERMISSIONS_REQUEST_FINE_LOCATION);
+        ActivityCompat.requestPermissions(this, new
+                        String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                PERMISSIONS_REQUEST_FINE_LOCATION);
     }
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (mLastLocation != null) {
-            setLatLngs();
-            updateUI();
-        } else
-            Toast.makeText(this, "No location detected", Toast.LENGTH_LONG).show();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED) {
+            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            if (mLastLocation != null) {
+                setLatLngs();
+                updateUI();
+            } else
+                Toast.makeText(this, "No location detected", Toast.LENGTH_LONG).show();
+        }
     }
 
     @Override
@@ -176,7 +205,7 @@ public class EventDetailActivity extends AppCompatActivity
 
     @SuppressWarnings("StatementWithEmptyBody")
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
@@ -221,7 +250,9 @@ public class EventDetailActivity extends AppCompatActivity
         } else {
             Toast.makeText(this, "onStart(): Permission denied! Try to request the permission",
                     Toast.LENGTH_SHORT).show();
-            tryToRequestPermission();
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) !=
+                    PackageManager.PERMISSION_GRANTED)
+                tryToRequestPermission();
         }
 
     }
@@ -301,13 +332,19 @@ public class EventDetailActivity extends AppCompatActivity
 
         Geocoder geocoder = new Geocoder(this);
         List<Address> addresses;
+        String venue = mCursor.getString(INDEX_VENUE);
         try {
-            addresses = geocoder.getFromLocationName(mVenue, 5);
+            addresses = geocoder.getFromLocationName(venue, 5);
             latitude = addresses.get(0).getLatitude();
             longitude = addresses.get(0).getLongitude();
-            mDestinationLatLng = new LatLng(latitude, longitude);
+        } catch (IndexOutOfBoundsException e) {
+            Log.e(LOG_TAG, "No latitude and longitude for address: " + venue + " is found.");
+            Toast.makeText(this, "Unknown coordinate for " + venue, Toast.LENGTH_SHORT).show();
         } catch (IOException e) {
             Log.e(LOG_TAG, "Failure in getting destination coordinates", e);
+        } finally {
+            // Fall back to the users current location
+            mDestinationLatLng = new LatLng(latitude, longitude);
         }
     }
 
@@ -316,19 +353,22 @@ public class EventDetailActivity extends AppCompatActivity
     }
 
     private void updateUI() {
-        ImageView detailEventImage = (ImageView) findViewById(R.id.detail_event_image);
-        TextView detailTitle = (TextView) findViewById(R.id.detail_title);
-        TextView detailCategory = (TextView) findViewById(R.id.detail_category);
-        TextView detailDate = (TextView) findViewById(R.id.detail_date);
-        TextView detailTime = (TextView) findViewById(R.id.detail_time);
-        TextView detailVenue = (TextView) findViewById(R.id.detail_venue);
+        int imageId = mCursor.getInt(INDEX_IMAGE_ID);
+        String title = mCursor.getString(INDEX_TITLE);
+        int categoryId = mCursor.getInt(INDEX_CATEGORY);
+        String category = EventEntry.getCatetoryFromId(categoryId);
+        String date = mCursor.getString(INDEX_DATE);
+        String startTime = mCursor.getString(INDEX_START_TIME);
+        String endTime = mCursor.getString(INDEX_END_TIME);
+        String venue = mCursor.getString(INDEX_VENUE);
 
-        detailEventImage.setImageResource(mImageId);
-        detailTitle.setText(mTitle);
-        detailCategory.setText(mCategory);
-        detailDate.setText(mDate);
-        detailTime.setText(mTime);
-        detailVenue.setText(mVenue);
+        String time = startTime + " - " + endTime;
+        mDetailEventImage.setImageResource(imageId);
+        mDetailTitle.setText(title);
+        mDetailCategory.setText(category);
+        mDetailDate.setText(date);
+        mDetailTime.setText(time);
+        mDetailVenue.setText(venue);
 
         updateMapUI();
         updateTravelTimeUI();
