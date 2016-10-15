@@ -1,31 +1,59 @@
 package com.example.zpiao1.excited;
 
+import android.database.Cursor;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
-
-import java.util.List;
+import android.util.Log;
 
 public class EventImagePagerAdapter extends FragmentStatePagerAdapter {
 
-    private List<EventImage> mEventImages;
+    private static final String LOG_TAG = EventImagePagerAdapter.class.getSimpleName();
+    private Cursor mCursor;
 
-    public EventImagePagerAdapter(FragmentManager fm, List<EventImage> eventImages) {
-        super(fm);
-        mEventImages = eventImages;
-        for (int i = 0; i < mEventImages.size(); ++i)
-            mEventImages.get(i).setPosition(i);
+    public EventImagePagerAdapter(FragmentManager fragmentManager, Cursor cursor) {
+        super(fragmentManager);
+        mCursor = cursor;
     }
 
     @Override
     public Fragment getItem(int position) {
-        EventImage item = mEventImages.get(position);
-        return EventImageFragment.getInstance(item);
+        mCursor.moveToPosition(position);
+        return EventImageFragment.getInstance(mCursor);
     }
 
     @Override
     public int getCount() {
-        return mEventImages.size();
+        if (mCursor == null)
+            return 0;
+        return mCursor.getCount();
     }
 
+    public Cursor getCursor() {
+        return mCursor;
+    }
+
+    public Cursor swapCursor(Cursor newCursor) {
+        if (newCursor == mCursor)
+            return null;
+
+        Log.v(LOG_TAG, "Swap cursor successfully");
+        Cursor oldCursor = mCursor;
+        mCursor = newCursor;
+        notifyDataSetChanged();
+
+        return oldCursor;
+    }
+
+    public void changeCursor(Cursor cursor) {
+        Cursor old = swapCursor(cursor);
+        if (old != null)
+            old.close();
+    }
+
+    @Override
+    public int getItemPosition(Object object) {
+        Log.v(LOG_TAG, "getItemPosition: " + object.getClass().getSimpleName());
+        return POSITION_NONE;
+    }
 }

@@ -1,15 +1,22 @@
 package com.example.zpiao1.excited;
 
+import android.content.ContentValues;
+import android.database.Cursor;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
@@ -18,19 +25,35 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.example.zpiao1.excited.data.EventContract.EventEntry;
+
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener,
+        LoaderManager.LoaderCallbacks<Cursor> {
 
+    // The indices for each column in EVENT_COLUMNS
+    public static final int COL_ROW_ID = 0;
+    public static final int COL_IMAGE_ID = 1;
+    public static final int COL_DATE = 2;
+    public static final int COL_TITLE = 3;
     private static final float Y_CHANGE_THRESHOLD = 300f;
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
     private static final int TRANSPARENT_COLOR = 0x00000000;
-
+    private static final int LOADER_ID = 1;
+    // The columns to be projected on
+    private static final String[] EVENT_COLUMNS = new String[]{
+            EventEntry._ID,
+            EventEntry.COLUMN_IMAGE_ID,
+            EventEntry.COLUMN_DATE,
+            EventEntry.COLUMN_TITLE
+    };
     private IconAdapter mIconAdapter;
-    private EventImagePagerAdapter mPagerAdapter;
+    private EventImagePagerAdapter mEventImagePagerAdapter;
+    private ViewPager mViewPager;
+
     private ImageView[] mDotsIndicator;
-    private ArrayList<EventImage> mEventImages;
     private int mGarbageIconDefaultHeight;
     private int mStarIconDefaultHeight;
 
@@ -50,9 +73,11 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        // Add the events to the view pager
+        mViewPager = (ViewPager) findViewById(R.id.event_view_pager);
         loadGridView();
         createFakeData();
-        loadImageViewPager();
+        getSupportLoaderManager().initLoader(LOADER_ID, null, this);
 
         mGarbageIconDefaultHeight = findViewById(R.id.garbage_image).getLayoutParams().height;
         mStarIconDefaultHeight = findViewById(R.id.star_image).getLayoutParams().height;
@@ -130,19 +155,13 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void loadImageViewPager() {
-        // Add the events to the view pager
-        ViewPager viewPager = (ViewPager) findViewById(R.id.event_view_pager);
-
-        mPagerAdapter = new EventImagePagerAdapter(getSupportFragmentManager(), mEventImages);
-        viewPager.setAdapter(mPagerAdapter);
-
         // Create the dot indicators
         LinearLayout pagerIndicator = (LinearLayout) findViewById(R.id.pager_indicator);
         // TODO might need to add background color
         pagerIndicator.removeAllViewsInLayout();
-        mDotsIndicator = new ImageView[mEventImages.size()];
+        mDotsIndicator = new ImageView[mEventImagePagerAdapter.getCount()];
 
-        for (int i = 0; i < mEventImages.size(); ++i) {
+        for (int i = 0; i < mEventImagePagerAdapter.getCount(); ++i) {
             mDotsIndicator[i] = new ImageView(MainActivity.this);
             if (i == 0)
                 mDotsIndicator[i].setImageResource(R.drawable.selected_item_dot);
@@ -156,15 +175,15 @@ public class MainActivity extends AppCompatActivity
             pagerIndicator.addView(mDotsIndicator[i], params);
         }
 
-        viewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-
+            public void onPageScrolled(int position, float positionOffset,
+                                       int positionOffsetPixels) {
             }
 
             @Override
             public void onPageSelected(int position) {
-                for (int i = 0; i < mEventImages.size(); ++i)
+                for (int i = 0; i < mEventImagePagerAdapter.getCount(); ++i)
                     if (i == position)
                         mDotsIndicator[i].setImageResource(R.drawable.selected_item_dot);
                     else
@@ -173,27 +192,47 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onPageScrollStateChanged(int state) {
-
             }
         });
     }
 
     private void createFakeData() {
-        mEventImages = new ArrayList<>();
-        mEventImages.add(new EventImage(R.mipmap.boat_people, "Sep 15", "Boat People"));
-        mEventImages.add(new EventImage(R.mipmap.free_baby_event_cradle_of_love, "Sep 18",
-                "Free Baby Event Cradle Of Love"));
-        mEventImages.add(new EventImage(R.mipmap.free_yoga_and_tea_session_with_dr_trish_corley,
-                "Sep 15", "Free Yoga & Tea Session with Dr. Trish Corley"));
-    }
+        // Clear the table first
+        getContentResolver().delete(EventEntry.CONTENT_URI, null, null);
+        // bulkInsert into the database through ContentProvider
+        ArrayList<ContentValues> valuesList = new ArrayList<>();
 
-    public void removeEventImage(int position) {
-        EventImage eventImage = mEventImages.get(position);
-        eventImage.setRemoved(true);
-        Toast.makeText(this, String.format("%s is removed.", eventImage.getTitle()),
-                Toast.LENGTH_SHORT).show();
-        mEventImages.remove(position);
-        loadImageViewPager();
+        ContentValues boatPeopleValues = EventEntry.buildContentValues(
+                R.mipmap.boat_people,
+                "Sep 15",
+                "Boat People",
+                "7.00pm",
+                "9.00pm",
+                EventEntry.CATEGORY_ART,
+                "8 College Ave W, Singapore 138608");
+        ContentValues freeBabyValues = EventEntry.buildContentValues(
+                R.mipmap.free_baby_event_cradle_of_love,
+                "Sep 18",
+                "Free Baby Event Cradle Of Love",
+                "1:30pm",
+                "6 pm",
+                EventEntry.CATEGORY_KIDS,
+                "Pickering Street, Singapore 048659");
+        ContentValues freeYogaValues = EventEntry.buildContentValues(
+                R.mipmap.free_yoga_and_tea_session_with_dr_trish_corley,
+                "Sep 15",
+                "Free Yoga & Tea Session with Dr. Trish Corley",
+                "7:45PM",
+                "9.15PM",
+                EventEntry.CATEGORY_SPORTS,
+                "yoga in common, 10 Petain Rd, Singapore 208089");
+
+        valuesList.add(boatPeopleValues);
+        valuesList.add(freeBabyValues);
+        valuesList.add(freeYogaValues);
+
+        getContentResolver().bulkInsert(EventEntry.CONTENT_URI,
+                valuesList.toArray(new ContentValues[valuesList.size()]));
     }
 
     public void changeIconGradually(float startTouchY, float currentTouchY) {
@@ -218,7 +257,8 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void changeIconGraduallyHelper(ImageView iconImage, int color, int defaultHeight, float scale) {
+    private void changeIconGraduallyHelper(ImageView iconImage, int color, int defaultHeight, float
+            scale) {
         // Change the size of the ImageView
         ViewGroup.LayoutParams params = iconImage.getLayoutParams();
         params.height = (int) (defaultHeight * (1 + scale));
@@ -245,5 +285,97 @@ public class MainActivity extends AppCompatActivity
         iconImage.setLayoutParams(params);
 
         iconImage.setBackgroundColor(TRANSPARENT_COLOR);
+    }
+
+    public void onImageRemoved(Uri uri) {
+        // Uri contains the id of the row where is_removed is set to true (1)
+        ContentValues values = new ContentValues();
+        values.put(EventEntry.COLUMN_IS_REMOVED, EventEntry.BOOLEAN_TRUE);
+        // The selection and selection args is given in the ContentProvider since we just update one
+        // row
+        getContentResolver().update(uri, values, null, null);
+
+        // Show a toast that the image is removed successfully
+        String[] projection = new String[]{EventEntry.COLUMN_TITLE};
+        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+        if (cursor == null)
+            throw new RuntimeException("Cursor is null");
+        cursor.moveToFirst();
+        String title = cursor.getString(0);
+        Toast.makeText(this, title + " is removed", Toast.LENGTH_SHORT).show();
+        cursor.close();
+    }
+
+    public void onImageStarred(Uri uri) {
+        // Uri contains the id of the row where is_starred is set to true (1)
+        ContentValues values = new ContentValues();
+        values.put(EventEntry.COLUMN_IS_STARRED, EventEntry.BOOLEAN_TRUE);
+        getContentResolver().update(uri, values, null, null);
+
+        // Show a toast that the image is starred
+        String[] projection = new String[]{EventEntry.COLUMN_TITLE};
+        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
+        if (cursor == null)
+            throw new RuntimeException("Cursor is null");
+        cursor.moveToFirst();
+        Log.v(LOG_TAG, "onImageStarred: cursor size: " + cursor.getCount());
+        String title = cursor.getString(0);
+        Toast.makeText(this, title + " is starred", Toast.LENGTH_SHORT).show();
+        cursor.close();
+    }
+
+    @Override
+    public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        // Query the _id, image_id, date and title for events that are not removed
+        // SELECT _id, image_id, date, title
+        // FROM events
+        // WHERE is_removed = 0
+        // ORDER BY _id ASC;
+        String selection = EventEntry.COLUMN_IS_REMOVED + " = ?";
+        String[] selectionArgs = new String[]{Integer.toString(EventEntry.BOOLEAN_FALSE)};
+        CursorLoader cursorLoader = new CursorLoader(this,
+                EventEntry.CONTENT_URI,
+                EVENT_COLUMNS,
+                selection,
+                selectionArgs,
+                null);
+        return cursorLoader;
+    }
+
+    @Override
+    public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
+        Log.v(LOG_TAG, "onLoadFinished: Check the cursor");
+        Log.v(LOG_TAG, "_id, image_id, date, title: ");
+        while (data.moveToNext()) {
+            long id = data.getLong(COL_ROW_ID);
+            int imageId = data.getInt(COL_IMAGE_ID);
+            String date = data.getString(COL_DATE);
+            String title = data.getString(COL_TITLE);
+            Log.v(LOG_TAG, Long.toString(id) + ", " + Integer.toString(imageId) + ", " + date + ", " + title);
+        }
+        if (mEventImagePagerAdapter == null) {
+            mEventImagePagerAdapter = new EventImagePagerAdapter(getSupportFragmentManager(), data);
+            mViewPager.setAdapter(mEventImagePagerAdapter);
+        } else
+            mEventImagePagerAdapter.swapCursor(data);
+        loadImageViewPager();
+    }
+//
+//    private void requery() {
+//        String selection = EventEntry.COLUMN_IS_REMOVED + " = ?";
+//        String[] selectionArgs = new String[]{Integer.toString(EventEntry.BOOLEAN_FALSE)};
+//        Cursor cursor = getContentResolver().query(
+//                EventEntry.CONTENT_URI,
+//                EVENT_COLUMNS,
+//                selection,
+//                selectionArgs,
+//                null);
+//        if (mEventImagePagerAdapter != null)
+//            mEventImagePagerAdapter.swapCursor(cursor);
+//    }
+
+    @Override
+    public void onLoaderReset(Loader<Cursor> loader) {
+        mEventImagePagerAdapter.swapCursor(null);
     }
 }

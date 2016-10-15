@@ -22,6 +22,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -56,6 +57,13 @@ public class EventDetailActivity extends AppCompatActivity
     private GoogleMap mGoogleMap = null;
     private LatLng mCurrentLatLng;
     private LatLng mDestinationLatLng;
+
+    private int mImageId;
+    private String mTitle;
+    private String mDate;
+    private String mCategory;
+    private String mTime;
+    private String mVenue;
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -94,6 +102,14 @@ public class EventDetailActivity extends AppCompatActivity
         mMapView.onCreate(savedInstanceState);
 
         mMapView.getMapAsync(this);
+
+        Bundle extras = getIntent().getExtras();
+        mImageId = extras.getInt("imageId");
+        mTitle = extras.getString("title");
+        mDate = extras.getString("date");
+        mCategory = extras.getString("category");
+        mTime = extras.getString("time");
+        mVenue = extras.getString("venue");
     }
 
     @Override
@@ -141,8 +157,7 @@ public class EventDetailActivity extends AppCompatActivity
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (mLastLocation != null) {
             setLatLngs();
-            updateMapUI();
-            updateTravelTimeUI();
+            updateUI();
         } else
             Toast.makeText(this, "No location detected", Toast.LENGTH_LONG).show();
     }
@@ -284,12 +299,10 @@ public class EventDetailActivity extends AppCompatActivity
         double longitude = mLastLocation.getLongitude();
         mCurrentLatLng = new LatLng(latitude, longitude);
 
-        TextView detailVenue = (TextView) findViewById(R.id.detail_venue);
-        String venue = detailVenue.getText().toString();
         Geocoder geocoder = new Geocoder(this);
         List<Address> addresses;
         try {
-            addresses = geocoder.getFromLocationName(venue, 5);
+            addresses = geocoder.getFromLocationName(mVenue, 5);
             latitude = addresses.get(0).getLatitude();
             longitude = addresses.get(0).getLongitude();
             mDestinationLatLng = new LatLng(latitude, longitude);
@@ -300,5 +313,24 @@ public class EventDetailActivity extends AppCompatActivity
 
     private void updateTravelTimeUI() {
         new GetTravelTimeTask(this).execute(mCurrentLatLng, mDestinationLatLng);
+    }
+
+    private void updateUI() {
+        ImageView detailEventImage = (ImageView) findViewById(R.id.detail_event_image);
+        TextView detailTitle = (TextView) findViewById(R.id.detail_title);
+        TextView detailCategory = (TextView) findViewById(R.id.detail_category);
+        TextView detailDate = (TextView) findViewById(R.id.detail_date);
+        TextView detailTime = (TextView) findViewById(R.id.detail_time);
+        TextView detailVenue = (TextView) findViewById(R.id.detail_venue);
+
+        detailEventImage.setImageResource(mImageId);
+        detailTitle.setText(mTitle);
+        detailCategory.setText(mCategory);
+        detailDate.setText(mDate);
+        detailTime.setText(mTime);
+        detailVenue.setText(mVenue);
+
+        updateMapUI();
+        updateTravelTimeUI();
     }
 }

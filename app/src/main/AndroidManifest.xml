@@ -46,6 +46,10 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.example.zpiao1.excited.MainActivity" />
         </activity>
+
+        <provider
+            android:name=".data.EventProvider"
+            android:authorities="com.example.zpiao1.excited" />
     </application>
 
 </manifest>
