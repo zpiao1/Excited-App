@@ -1,4 +1,4 @@
-package com.example.zpiao1.excited;
+package com.example.zpiao1.excited.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -7,6 +7,9 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.example.zpiao1.excited.R;
+import com.example.zpiao1.excited.views.CategoryIcon;
 
 import java.util.List;
 
@@ -21,7 +24,7 @@ public class IconAdapter extends ArrayAdapter<CategoryIcon> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
-        CategoryIcon categoryIcon = (CategoryIcon) getItem(position);
+        CategoryIcon categoryIcon = getItem(position);
         View categoryItem = convertView;
         if (categoryItem == null)
             categoryItem = LayoutInflater.from(getContext()).inflate(R.layout.category_item,

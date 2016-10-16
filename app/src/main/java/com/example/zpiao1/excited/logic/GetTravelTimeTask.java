@@ -1,4 +1,4 @@
-package com.example.zpiao1.excited;
+package com.example.zpiao1.excited.logic;
 
 import android.app.Activity;
 import android.net.Uri;
@@ -6,6 +6,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.example.zpiao1.excited.R;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;

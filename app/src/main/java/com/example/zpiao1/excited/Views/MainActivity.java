@@ -1,4 +1,4 @@
-package com.example.zpiao1.excited;
+package com.example.zpiao1.excited.views;
 
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -25,6 +25,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.example.zpiao1.excited.R;
+import com.example.zpiao1.excited.adapters.EventImagePagerAdapter;
+import com.example.zpiao1.excited.adapters.IconAdapter;
 import com.example.zpiao1.excited.data.EventContract.EventEntry;
 
 import java.util.ArrayList;

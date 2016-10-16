@@ -1,4 +1,4 @@
-package com.example.zpiao1.excited;
+package com.example.zpiao1.excited.views;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
@@ -28,7 +28,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.EventContract.EventEntry;
+import com.example.zpiao1.excited.logic.GetTravelTimeTask;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -52,7 +54,9 @@ public class EventDetailActivity extends AppCompatActivity
         GoogleApiClient.OnConnectionFailedListener {
 
     private static final String LOG_TAG = EventDetailActivity.class.getSimpleName();
-    private static final String[] PROJECTION = new String[]{
+
+    // Projection and project indices for the event associated with this Activity
+    private static final String[] EVENT_PROJECTION = new String[]{
             EventEntry._ID,
             EventEntry.COLUMN_IMAGE_ID,
             EventEntry.COLUMN_TITLE,
@@ -62,14 +66,28 @@ public class EventDetailActivity extends AppCompatActivity
             EventEntry.COLUMN_END_TIME,
             EventEntry.COLUMN_VENUE
     };
-    private static final int INDEX_IMAGE_ID = 1;
-    private static final int INDEX_TITLE = 2;
-    private static final int INDEX_CATEGORY = 3;
-    private static final int INDEX_DATE = 4;
-    private static final int INDEX_START_TIME = 5;
-    private static final int INDEX_END_TIME = 6;
-    private static final int INDEX_VENUE = 7;
+    private static final int EVENT_INDEX_IMAGE_ID = 1;
+    private static final int EVENT_INDEX_TITLE = 2;
+    private static final int EVENT_INDEX_CATEGORY = 3;
+    private static final int EVENT_INDEX_DATE = 4;
+    private static final int EVENT_INDEX_START_TIME = 5;
+    private static final int EVENT_INDEX_END_TIME = 6;
+    private static final int EVENT_INDEX_VENUE = 7;
+
+    // Projection and project indices for the counts of starred and removed items
+    private static final String[] COUNT_PROJECTION = new String[]{
+            "COUNT(*)",
+    };
+    private static final String COUNT_STARRED_SELECTION = EventEntry.COLUMN_IS_STARRED + "=?";
+    private static final String[] COUNT_STARRED_SELECTION_ARGS = new String[]{Integer.toString(
+            EventEntry.BOOLEAN_TRUE)};
+    private static final String COUNT_REMOVED_SELECTION = EventEntry.COLUMN_IS_REMOVED + "=?";
+    private static final String[] COUNT_REMOVED_SELECTION_ARGS = new String[]{Integer.toString(
+            EventEntry.BOOLEAN_TRUE)};
+    private static final int COUNT_INDEX = 0;
+
     private static int PERMISSIONS_REQUEST_FINE_LOCATION = 0;
+
     private MapView mMapView;
     private GoogleApiClient mGoogleApiClient = null;
     private Location mLastLocation = null;
@@ -84,11 +102,17 @@ public class EventDetailActivity extends AppCompatActivity
     private TextView mDetailTime;
     private TextView mDetailVenue;
 
-    private Cursor mCursor;
+    private TextView mRemovedCountView;
+    private TextView mStarredCountView;
+
+    private Cursor mEventCursor;
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
+        // Update the UI for the destination
+        setDestinationLatLng();
+        updateMapUI(mDestinationLatLng, "Destination");
     }
 
     @Override
@@ -116,14 +140,16 @@ public class EventDetailActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
+        // Setup Google API client
         buildGoogleApiClient();
 
+        // Setup the Google Map View
         mMapView = (MapView) findViewById(map);
         mMapView.onCreate(savedInstanceState);
 
         mMapView.getMapAsync(this);
 
+        // Initialize the view
         mDetailEventImage = (ImageView) findViewById(R.id.detail_event_image);
         mDetailTitle = (TextView) findViewById(R.id.detail_title);
         mDetailCategory = (TextView) findViewById(R.id.detail_category);
@@ -131,13 +157,17 @@ public class EventDetailActivity extends AppCompatActivity
         mDetailTime = (TextView) findViewById(R.id.detail_time);
         mDetailVenue = (TextView) findViewById(R.id.detail_venue);
 
+        // Get data from database
         Uri queryUri = getIntent().getData();
         Log.v(LOG_TAG, "queryUri: " + queryUri);
-        mCursor = getContentResolver().query(queryUri, PROJECTION, null, null, null);
-        if (mCursor != null)
-            mCursor.moveToFirst();
+        mEventCursor = getContentResolver().query(queryUri, EVENT_PROJECTION, null, null, null);
+        if (mEventCursor != null)
+            mEventCursor.moveToFirst();
         else
-            throw new RuntimeException("Query failed, mCursor is null");
+            throw new RuntimeException("Query failed, mEventCursor is null");
+
+        // Update the text from the database
+        updateBasicUI();
     }
 
     @Override
@@ -154,6 +184,20 @@ public class EventDetailActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.event_detail, menu);
+
+        View removedActionView = menu.findItem(R.id.action_removed).getActionView();
+        ((ImageView) removedActionView.findViewById(R.id.action_icon)).setImageResource(
+                R.drawable.ic_garbage);
+        mRemovedCountView = (TextView) removedActionView.findViewById(R.id.count_text);
+
+        View scheduleActionView = menu.findItem(R.id.action_schedule).getActionView();
+        ((ImageView) scheduleActionView.findViewById(R.id.action_icon)).setImageResource(
+                R.drawable.ic_star);
+        mStarredCountView = (TextView) scheduleActionView.findViewById(R.id.count_text);
+
+        updateActionIconCount(mStarredCountView, COUNT_STARRED_SELECTION,
+                COUNT_STARRED_SELECTION_ARGS);
+        updateActionIconCount(mRemovedCountView, COUNT_REMOVED_SELECTION, COUNT_REMOVED_SELECTION_ARGS);
         return true;
     }
 
@@ -184,8 +228,9 @@ public class EventDetailActivity extends AppCompatActivity
                 PackageManager.PERMISSION_GRANTED) {
             mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
             if (mLastLocation != null) {
-                setLatLngs();
-                updateUI();
+                setUserLatLng();
+                updateMapUI(mCurrentLatLng, "Current Location");
+                updateTravelTimeUI();
             } else
                 Toast.makeText(this, "No location detected", Toast.LENGTH_LONG).show();
         }
@@ -230,7 +275,7 @@ public class EventDetailActivity extends AppCompatActivity
 
     @Override
     public boolean onMyLocationButtonClick() {
-        Toast.makeText(this, "MyLocation buttion clicked", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
         return false;
     }
 
@@ -310,29 +355,28 @@ public class EventDetailActivity extends AppCompatActivity
                         Toast.LENGTH_SHORT).show();
     }
 
-    private void updateMapUI() {
+    private void updateMapUI(LatLng latLng, String title) {
+        if (latLng == null) {
+            Toast.makeText(this, "Unknown Latitude and Longitude", Toast.LENGTH_SHORT).show();
+            return;
+        }
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
-        // Include the current location of the user
-        mGoogleMap.addMarker(new MarkerOptions().position(mCurrentLatLng).title("My Location"));
-        builder.include(mCurrentLatLng);
-
-        // Include the destination of the event
-        mGoogleMap.addMarker(new
-                MarkerOptions().position(mDestinationLatLng).title("Destination"));
-        builder.include(mDestinationLatLng);
+        mGoogleMap.addMarker(new MarkerOptions().position(latLng).title(title));
+        builder.include(latLng);
 
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(builder.build(), 100);
         mGoogleMap.animateCamera(cameraUpdate);
     }
 
-    private void setLatLngs() {
-        double latitude = mLastLocation.getLatitude();
-        double longitude = mLastLocation.getLongitude();
-        mCurrentLatLng = new LatLng(latitude, longitude);
+    private void setUserLatLng() {
+        mCurrentLatLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+    }
 
+    private void setDestinationLatLng() {
         Geocoder geocoder = new Geocoder(this);
         List<Address> addresses;
-        String venue = mCursor.getString(INDEX_VENUE);
+        double latitude = 0, longitude = 0;
+        String venue = mEventCursor.getString(EVENT_INDEX_VENUE);
         try {
             addresses = geocoder.getFromLocationName(venue, 5);
             latitude = addresses.get(0).getLatitude();
@@ -343,7 +387,6 @@ public class EventDetailActivity extends AppCompatActivity
         } catch (IOException e) {
             Log.e(LOG_TAG, "Failure in getting destination coordinates", e);
         } finally {
-            // Fall back to the users current location
             mDestinationLatLng = new LatLng(latitude, longitude);
         }
     }
@@ -352,15 +395,15 @@ public class EventDetailActivity extends AppCompatActivity
         new GetTravelTimeTask(this).execute(mCurrentLatLng, mDestinationLatLng);
     }
 
-    private void updateUI() {
-        int imageId = mCursor.getInt(INDEX_IMAGE_ID);
-        String title = mCursor.getString(INDEX_TITLE);
-        int categoryId = mCursor.getInt(INDEX_CATEGORY);
+    private void updateBasicUI() {
+        int imageId = mEventCursor.getInt(EVENT_INDEX_IMAGE_ID);
+        String title = mEventCursor.getString(EVENT_INDEX_TITLE);
+        int categoryId = mEventCursor.getInt(EVENT_INDEX_CATEGORY);
         String category = EventEntry.getCatetoryFromId(categoryId);
-        String date = mCursor.getString(INDEX_DATE);
-        String startTime = mCursor.getString(INDEX_START_TIME);
-        String endTime = mCursor.getString(INDEX_END_TIME);
-        String venue = mCursor.getString(INDEX_VENUE);
+        String date = mEventCursor.getString(EVENT_INDEX_DATE);
+        String startTime = mEventCursor.getString(EVENT_INDEX_START_TIME);
+        String endTime = mEventCursor.getString(EVENT_INDEX_END_TIME);
+        String venue = mEventCursor.getString(EVENT_INDEX_VENUE);
 
         String time = startTime + " - " + endTime;
         mDetailEventImage.setImageResource(imageId);
@@ -369,8 +412,23 @@ public class EventDetailActivity extends AppCompatActivity
         mDetailDate.setText(date);
         mDetailTime.setText(time);
         mDetailVenue.setText(venue);
+    }
 
-        updateMapUI();
-        updateTravelTimeUI();
+    private void updateActionIconCount(TextView countView, String selection,
+                                       String[] selectionArgs) {
+        Cursor countCursor = getContentResolver().query(
+                EventEntry.CONTENT_URI,
+                COUNT_PROJECTION,
+                selection,
+                selectionArgs,
+                null);
+
+        if (countCursor != null) {
+            countCursor.moveToFirst();
+            int count = countCursor.getInt(COUNT_INDEX);
+            countView.setText(Integer.toString(count));
+            countCursor.close();
+        } else
+            throw new RuntimeException("updateActionIconCount: countCursor is null");
     }
 }

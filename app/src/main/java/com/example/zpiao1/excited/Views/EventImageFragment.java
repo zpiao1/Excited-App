@@ -1,4 +1,4 @@
-package com.example.zpiao1.excited;
+package com.example.zpiao1.excited.views;
 
 import android.content.ContentUris;
 import android.content.Intent;
@@ -14,7 +14,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.EventContract.EventEntry;
+import com.example.zpiao1.excited.logic.OnSwipeListener;
 
 public class EventImageFragment extends Fragment {
 

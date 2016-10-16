@@ -1,9 +1,11 @@
-package com.example.zpiao1.excited;
+package com.example.zpiao1.excited.logic;
 
 import android.app.Activity;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
+
+import com.example.zpiao1.excited.views.MainActivity;
 
 /**
  * Created by zpiao on 10/1/2016.

@@ -1,10 +1,12 @@
-package com.example.zpiao1.excited;
+package com.example.zpiao1.excited.adapters;
 
 import android.database.Cursor;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.util.Log;
+
+import com.example.zpiao1.excited.views.EventImageFragment;
 
 public class EventImagePagerAdapter extends FragmentStatePagerAdapter {
 
@@ -40,7 +42,8 @@ public class EventImagePagerAdapter extends FragmentStatePagerAdapter {
         Log.v(LOG_TAG, "Swap cursor successfully");
         Cursor oldCursor = mCursor;
         mCursor = newCursor;
-        notifyDataSetChanged();
+        if (newCursor != null)
+            notifyDataSetChanged();
 
         return oldCursor;
     }

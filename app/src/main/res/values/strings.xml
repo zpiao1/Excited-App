@@ -5,6 +5,8 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">Settings</string>
+    <string name="action_schedule">Schedule</string>
+    <string name="action_removed">Removed Events</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
@@ -15,4 +17,6 @@
     <string name="venue">Venue: </string>
     <string name="time">Time: </string>
     <string name="date">Date: </string>
+
+    <string name="time_not_available">Not Available</string>
 </resources>

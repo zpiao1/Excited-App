@@ -1,4 +1,4 @@
-package com.example.zpiao1.excited;
+package com.example.zpiao1.excited.views;
 
 /**
  * Created by zpiao on 9/15/2016.

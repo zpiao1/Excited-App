@@ -10,7 +10,7 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.example.zpiao1.excited.EventDetailActivity"
+    tools:context="com.example.zpiao1.excited.views.EventDetailActivity"
     tools:showIn="@layout/app_bar_event_detail">
 
     <LinearLayout
@@ -136,8 +136,8 @@
                 android:id="@+id/detail_driving_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
-                tools:text="15 min" />
+                android:text="@string/time_not_available"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium" />
         </LinearLayout>
 
         <LinearLayout
@@ -157,8 +157,8 @@
                 android:id="@+id/detail_transit_time"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
-                tools:text="30 min" />
+                android:text="@string/time_not_available"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium" />
         </LinearLayout>
 
     </LinearLayout>
