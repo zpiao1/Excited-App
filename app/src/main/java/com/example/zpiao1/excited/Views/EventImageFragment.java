@@ -7,7 +7,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -37,7 +36,7 @@ public class EventImageFragment extends Fragment {
         fragment.mTitle = cursor.getString(MainActivity.COL_TITLE);
         fragment.mDate = cursor.getString(MainActivity.COL_DATE);
         fragment.mImageId = cursor.getInt(MainActivity.COL_IMAGE_ID);
-        Log.v(LOG_TAG, "cursor position: " + cursor.getPosition());
+//        Log.v(LOG_TAG, "cursor position: " + cursor.getPosition());
         return fragment;
     }
 

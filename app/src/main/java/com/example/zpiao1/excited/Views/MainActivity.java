@@ -55,10 +55,43 @@ public class MainActivity extends AppCompatActivity
     private IconAdapter mIconAdapter;
     private EventImagePagerAdapter mEventImagePagerAdapter;
     private ViewPager mViewPager;
+    private LinearLayout mPagerIndicator;
 
     private ImageView[] mDotsIndicator;
     private int mGarbageIconDefaultHeight;
     private int mStarIconDefaultHeight;
+
+    private boolean[] mCategoryCheckedStates;
+    private int mCheckedCount;
+
+    private static String buildSelection(int checkedCount) {
+        // is_removed=? AND
+        // category IN (?,?,?)
+        StringBuilder builder = new StringBuilder(EventEntry.COLUMN_IS_REMOVED).append("=? AND ");
+        builder.append(EventEntry.COLUMN_CATEGORY)
+                .append(" IN (");
+        for (int i = 0; i < checkedCount; ++i)
+            if (i != checkedCount - 1)
+                builder.append("?,");
+            else
+                builder.append("?)");
+        return builder.toString();
+//        Log.v(LOG_TAG, "Selection String: " + selection);
+    }
+
+    private static String[] buildSelectionArgs(int checkedCount, boolean[] categoryCheckedStates) {
+        // Accommodate the first argument, is_removed=0
+        String[] selectionArgs = new String[checkedCount + 1];
+        selectionArgs[0] = Integer.toString(EventEntry.BOOLEAN_FALSE);
+        int indexInSelectionArgs = 1;
+        for (int indexInCategoryCheckedStates = 0;
+             indexInCategoryCheckedStates < categoryCheckedStates.length;
+             ++indexInCategoryCheckedStates)
+            if (categoryCheckedStates[indexInCategoryCheckedStates])
+                selectionArgs[indexInSelectionArgs++] =
+                        Integer.toString(indexInCategoryCheckedStates);
+        return selectionArgs;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,9 +109,12 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        mPagerIndicator = (LinearLayout) findViewById(R.id.pager_indicator);
+
         // Add the events to the view pager
         mViewPager = (ViewPager) findViewById(R.id.event_view_pager);
         loadGridView();
+
         createFakeData();
         getSupportLoaderManager().initLoader(LOADER_ID, null, this);
 
@@ -146,22 +182,33 @@ public class MainActivity extends AppCompatActivity
     private void loadGridView() {
         GridView gridView = (GridView) findViewById(R.id.icon_container);
         ArrayList<CategoryIcon> categoryIcons = new ArrayList<>();
-        categoryIcons.add(new CategoryIcon("Movie", R.drawable.ic_film_reel));
-        categoryIcons.add(new CategoryIcon("Art", R.drawable.ic_masks));
-        categoryIcons.add(new CategoryIcon("Sports", R.drawable.ic_archery));
-        categoryIcons.add(new CategoryIcon("Nightlife", R.drawable.ic_wine_glass));
-        categoryIcons.add(new CategoryIcon("Kids", R.drawable.ic_boy));
-        categoryIcons.add(new CategoryIcon("Expo", R.drawable.ic_exhibition));
+        categoryIcons.add(new CategoryIcon("Movie", R.drawable.ic_film_reel,
+                R.drawable.ic_film_reel_grey));
+        categoryIcons.add(new CategoryIcon("Art", R.drawable.ic_masks,
+                R.drawable.ic_masks_grey));
+        categoryIcons.add(new CategoryIcon("Sports", R.drawable.ic_archery,
+                R.drawable.ic_archery_grey));
+        categoryIcons.add(new CategoryIcon("Nightlife", R.drawable.ic_wine_glass,
+                R.drawable.ic_wine_glass_grey));
+        categoryIcons.add(new CategoryIcon("Kids", R.drawable.ic_boy,
+                R.drawable.ic_boy_grey));
+        categoryIcons.add(new CategoryIcon("Expo", R.drawable.ic_exhibition,
+                R.drawable.ic_exhibition_grey));
         mIconAdapter = new IconAdapter(MainActivity.this, categoryIcons);
 
         gridView.setAdapter(mIconAdapter);
+
+        // Initialize all the categories to be checked
+        mCategoryCheckedStates = new boolean[categoryIcons.size()];
+        for (int i = 0; i < mCategoryCheckedStates.length; ++i)
+            mCategoryCheckedStates[i] = true;
+        mCheckedCount = categoryIcons.size();
     }
 
-    private void loadImageViewPager() {
+    private void loadDotIndicators() {
         // Create the dot indicators
-        LinearLayout pagerIndicator = (LinearLayout) findViewById(R.id.pager_indicator);
         // TODO might need to add background color
-        pagerIndicator.removeAllViewsInLayout();
+        mPagerIndicator.removeAllViewsInLayout();
         mDotsIndicator = new ImageView[mEventImagePagerAdapter.getCount()];
 
         for (int i = 0; i < mEventImagePagerAdapter.getCount(); ++i) {
@@ -175,8 +222,13 @@ public class MainActivity extends AppCompatActivity
                     ViewGroup.LayoutParams.WRAP_CONTENT);
 
             params.setMargins(8, 0, 8, 0);
-            pagerIndicator.addView(mDotsIndicator[i], params);
+            mPagerIndicator.addView(mDotsIndicator[i], params);
         }
+    }
+
+    private void loadImageViewPager() {
+
+        loadDotIndicators();
 
         mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
             @Override
@@ -187,10 +239,8 @@ public class MainActivity extends AppCompatActivity
             @Override
             public void onPageSelected(int position) {
                 for (int i = 0; i < mEventImagePagerAdapter.getCount(); ++i)
-                    if (i == position)
-                        mDotsIndicator[i].setImageResource(R.drawable.selected_item_dot);
-                    else
-                        mDotsIndicator[i].setImageResource(R.drawable.unselected_item_dot);
+                    mDotsIndicator[i].setImageResource((i == position ?
+                            R.drawable.selected_item_dot : R.drawable.unselected_item_dot));
             }
 
             @Override
@@ -333,29 +383,28 @@ public class MainActivity extends AppCompatActivity
         // SELECT _id, image_id, date, title
         // FROM events
         // WHERE is_removed = 0
-        // ORDER BY _id ASC;
-        String selection = EventEntry.COLUMN_IS_REMOVED + " = ?";
-        String[] selectionArgs = new String[]{Integer.toString(EventEntry.BOOLEAN_FALSE)};
-        CursorLoader cursorLoader = new CursorLoader(this,
+        // AND category in (<mCategoryCheckedState>);
+        String selection = buildSelection(mCheckedCount);
+        String[] selectionArgs = buildSelectionArgs(mCheckedCount, mCategoryCheckedStates);
+        return new CursorLoader(this,
                 EventEntry.CONTENT_URI,
                 EVENT_COLUMNS,
                 selection,
                 selectionArgs,
                 null);
-        return cursorLoader;
     }
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-        Log.v(LOG_TAG, "onLoadFinished: Check the cursor");
-        Log.v(LOG_TAG, "_id, image_id, date, title: ");
-        while (data.moveToNext()) {
-            long id = data.getLong(COL_ROW_ID);
-            int imageId = data.getInt(COL_IMAGE_ID);
-            String date = data.getString(COL_DATE);
-            String title = data.getString(COL_TITLE);
-            Log.v(LOG_TAG, Long.toString(id) + ", " + Integer.toString(imageId) + ", " + date + ", " + title);
-        }
+//        Log.v(LOG_TAG, "onLoadFinished: Check the cursor");
+//        Log.v(LOG_TAG, "_id, image_id, date, title: ");
+//        while (data.moveToNext()) {
+//            long id = data.getLong(COL_ROW_ID);
+//            int imageId = data.getInt(COL_IMAGE_ID);
+//            String date = data.getString(COL_DATE);
+//            String title = data.getString(COL_TITLE);
+//            Log.v(LOG_TAG, Long.toString(id) + ", " + Integer.toString(imageId) + ", " + date + ", " + title);
+//        }
         if (mEventImagePagerAdapter == null) {
             mEventImagePagerAdapter = new EventImagePagerAdapter(getSupportFragmentManager(), data);
             mViewPager.setAdapter(mEventImagePagerAdapter);
@@ -363,22 +412,30 @@ public class MainActivity extends AppCompatActivity
             mEventImagePagerAdapter.swapCursor(data);
         loadImageViewPager();
     }
-//
-//    private void requery() {
-//        String selection = EventEntry.COLUMN_IS_REMOVED + " = ?";
-//        String[] selectionArgs = new String[]{Integer.toString(EventEntry.BOOLEAN_FALSE)};
-//        Cursor cursor = getContentResolver().query(
-//                EventEntry.CONTENT_URI,
-//                EVENT_COLUMNS,
-//                selection,
-//                selectionArgs,
-//                null);
-//        if (mEventImagePagerAdapter != null)
-//            mEventImagePagerAdapter.swapCursor(cursor);
-//    }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
         mEventImagePagerAdapter.swapCursor(null);
     }
+
+    public void onCategoryCheckedChange(int position, boolean isChecked) {
+        if (mCategoryCheckedStates == null)
+            throw new RuntimeException("mCategoryCheckedStates is null");
+        // If there is change in selection of categories
+        if (mCategoryCheckedStates[position] != isChecked) {
+            mCategoryCheckedStates[position] = isChecked;
+            mCheckedCount += (isChecked ? 1 : -1);
+            String selection = buildSelection(mCheckedCount);
+            String[] selectionArgs = buildSelectionArgs(mCheckedCount, mCategoryCheckedStates);
+            Cursor cursor = getContentResolver().query(
+                    EventEntry.CONTENT_URI,
+                    EVENT_COLUMNS,
+                    selection,
+                    selectionArgs,
+                    null);
+            mEventImagePagerAdapter.swapCursor(cursor);
+            loadDotIndicators();
+        }
+    }
+
 }

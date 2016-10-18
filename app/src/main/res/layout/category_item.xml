@@ -3,22 +3,21 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center"
     android:orientation="vertical"
     android:padding="4dp">
 
-    <ImageView
+    <ToggleButton
         android:id="@+id/icon"
         android:layout_width="64dp"
         android:layout_height="64dp"
-        android:layout_gravity="center"
-        android:layout_margin="4dp"
-        tools:src="@drawable/ic_film_reel" />
+        android:textOff=""
+        android:textOn="" />
 
     <TextView
         android:id="@+id/icon_tag"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
         android:textAllCaps="true"
         android:textAppearance="?android:attr/textAppearanceSmall"
         tools:text="Movie" />

@@ -4,7 +4,6 @@ import android.database.Cursor;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
-import android.util.Log;
 
 import com.example.zpiao1.excited.views.EventImageFragment;
 
@@ -38,8 +37,6 @@ public class EventImagePagerAdapter extends FragmentStatePagerAdapter {
     public Cursor swapCursor(Cursor newCursor) {
         if (newCursor == mCursor)
             return null;
-
-        Log.v(LOG_TAG, "Swap cursor successfully");
         Cursor oldCursor = mCursor;
         mCursor = newCursor;
         if (newCursor != null)
@@ -56,7 +53,6 @@ public class EventImagePagerAdapter extends FragmentStatePagerAdapter {
 
     @Override
     public int getItemPosition(Object object) {
-        Log.v(LOG_TAG, "getItemPosition: " + object.getClass().getSimpleName());
         return POSITION_NONE;
     }
 }

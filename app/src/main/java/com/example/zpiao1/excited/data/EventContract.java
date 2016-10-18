@@ -26,14 +26,17 @@ public class EventContract {
         public static final String COLUMN_END_TIME = "end_time";
         public static final String COLUMN_CATEGORY = "category";
         public static final String COLUMN_VENUE = "venue";
+
         public static final int CATEGORY_MOVIE = 0;
         public static final int CATEGORY_ART = 1;
         public static final int CATEGORY_SPORTS = 2;
         public static final int CATEGORY_NIGHTLIFE = 3;
         public static final int CATEGORY_KIDS = 4;
         public static final int CATEGORY_EXPO = 5;
+
         public static final int BOOLEAN_TRUE = 1;
         public static final int BOOLEAN_FALSE = 0;
+
         static final String TABLE_NAME = "events";
 
         static boolean isValidBoolean(int booleanValue) {

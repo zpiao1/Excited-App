@@ -11,7 +11,6 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.example.zpiao1.excited.data.EventContract.EventEntry;
 
@@ -227,8 +226,8 @@ public class EventProvider extends ContentProvider {
                         long id = db.insert(EventEntry.TABLE_NAME, null, value);
                         if (id != -1) {
                             ++returnCount;
-                            Log.v(LOG_TAG, "Inserted: " +
-                                    value.getAsString(EventEntry.COLUMN_TITLE) + "id: " + id);
+//                            Log.v(LOG_TAG, "Inserted: " +
+//                                    value.getAsString(EventEntry.COLUMN_TITLE) + "id: " + id);
                             Uri singleUri = ContentUris.withAppendedId(uri, id);
                             if (context != null)
                                 context.getContentResolver().notifyChange(singleUri, null);

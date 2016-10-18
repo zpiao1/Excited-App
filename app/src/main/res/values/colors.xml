@@ -6,4 +6,7 @@
     <color name="lightBlack">#83000000</color>
     <color name="lightGreen">#CCFF90</color>
     <color name="lightRed">#FF8A80</color>
+    <color name="darkerGrey">@android:color/darker_gray</color>
+    <color name="transparent">@android:color/transparent</color>
+    <color name="lightGrey">#EEEEEE</color>
 </resources>
