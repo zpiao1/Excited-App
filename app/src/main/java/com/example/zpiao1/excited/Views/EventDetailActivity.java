@@ -110,9 +110,15 @@ public class EventDetailActivity extends AppCompatActivity
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
-        // Update the UI for the destination
-        setDestinationLatLng();
-        updateMapUI(mDestinationLatLng, "Destination");
+        mGoogleMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
+            @Override
+            public void onMapLoaded() {
+                // Update the UI for the destination
+                setDestinationLatLng();
+                updateMapUI(mDestinationLatLng, "Destination");
+                updateTravelTimeUI();
+            }
+        });
     }
 
     @Override
@@ -197,7 +203,8 @@ public class EventDetailActivity extends AppCompatActivity
 
         updateActionIconCount(mStarredCountView, COUNT_STARRED_SELECTION,
                 COUNT_STARRED_SELECTION_ARGS);
-        updateActionIconCount(mRemovedCountView, COUNT_REMOVED_SELECTION, COUNT_REMOVED_SELECTION_ARGS);
+        updateActionIconCount(mRemovedCountView, COUNT_REMOVED_SELECTION,
+                COUNT_REMOVED_SELECTION_ARGS);
         return true;
     }
 
@@ -230,7 +237,7 @@ public class EventDetailActivity extends AppCompatActivity
             if (mLastLocation != null) {
                 setUserLatLng();
                 updateMapUI(mCurrentLatLng, "Current Location");
-                updateTravelTimeUI();
+
             } else
                 Toast.makeText(this, "No location detected", Toast.LENGTH_LONG).show();
         }
@@ -360,12 +367,17 @@ public class EventDetailActivity extends AppCompatActivity
             Toast.makeText(this, "Unknown Latitude and Longitude", Toast.LENGTH_SHORT).show();
             return;
         }
-        LatLngBounds.Builder builder = new LatLngBounds.Builder();
         mGoogleMap.addMarker(new MarkerOptions().position(latLng).title(title));
-        builder.include(latLng);
 
-        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(builder.build(), 100);
-        mGoogleMap.animateCamera(cameraUpdate);
+        // Move the camera only when both latlngs are ready
+        if (mDestinationLatLng != null && mCurrentLatLng != null) {
+            LatLngBounds.Builder builder = new LatLngBounds.Builder();
+            builder.include(mDestinationLatLng);
+            builder.include(mCurrentLatLng);
+
+            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngBounds(builder.build(), 100);
+            mGoogleMap.animateCamera(cameraUpdate);
+        }
     }
 
     private void setUserLatLng() {

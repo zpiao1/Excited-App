@@ -65,6 +65,10 @@ public class MainActivity extends AppCompatActivity
     private int mCheckedCount;
 
     private static String buildSelection(int checkedCount) {
+        // _id=?
+        if (checkedCount == 0)
+            return EventEntry._ID + "=?";
+
         // is_removed=? AND
         // category IN (?,?,?)
         StringBuilder builder = new StringBuilder(EventEntry.COLUMN_IS_REMOVED).append("=? AND ");
@@ -80,6 +84,9 @@ public class MainActivity extends AppCompatActivity
     }
 
     private static String[] buildSelectionArgs(int checkedCount, boolean[] categoryCheckedStates) {
+        // _id=-1, always invalid
+        if (checkedCount == 0)
+            return new String[]{"-1"};
         // Accommodate the first argument, is_removed=0
         String[] selectionArgs = new String[checkedCount + 1];
         selectionArgs[0] = Integer.toString(EventEntry.BOOLEAN_FALSE);
@@ -247,6 +254,7 @@ public class MainActivity extends AppCompatActivity
             public void onPageScrollStateChanged(int state) {
             }
         });
+        mViewPager.setCurrentItem(0);
     }
 
     private void createFakeData() {
@@ -348,6 +356,9 @@ public class MainActivity extends AppCompatActivity
         // row
         getContentResolver().update(uri, values, null, null);
 
+//        resetEventImagePagers();
+        getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
+
         // Show a toast that the image is removed successfully
         String[] projection = new String[]{EventEntry.COLUMN_TITLE};
         Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
@@ -363,7 +374,10 @@ public class MainActivity extends AppCompatActivity
         // Uri contains the id of the row where is_starred is set to true (1)
         ContentValues values = new ContentValues();
         values.put(EventEntry.COLUMN_IS_STARRED, EventEntry.BOOLEAN_TRUE);
+        // update the database
         getContentResolver().update(uri, values, null, null);
+
+        getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
 
         // Show a toast that the image is starred
         String[] projection = new String[]{EventEntry.COLUMN_TITLE};
@@ -379,6 +393,9 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
+        // If mCheckedCount = 0
+        // Query the same thing as follows but with _id=-1, which always return an empty cursor
+
         // Query the _id, image_id, date and title for events that are not removed
         // SELECT _id, image_id, date, title
         // FROM events
@@ -425,8 +442,16 @@ public class MainActivity extends AppCompatActivity
         if (mCategoryCheckedStates[position] != isChecked) {
             mCategoryCheckedStates[position] = isChecked;
             mCheckedCount += (isChecked ? 1 : -1);
+//            resetEventImagePagers();
+            getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
+        }
+    }
+
+    private void resetEventImagePagers() {
+        if (mCheckedCount != 0) {
             String selection = buildSelection(mCheckedCount);
             String[] selectionArgs = buildSelectionArgs(mCheckedCount, mCategoryCheckedStates);
+            Log.v(LOG_TAG, "selection: " + selection);
             Cursor cursor = getContentResolver().query(
                     EventEntry.CONTENT_URI,
                     EVENT_COLUMNS,
@@ -434,8 +459,9 @@ public class MainActivity extends AppCompatActivity
                     selectionArgs,
                     null);
             mEventImagePagerAdapter.swapCursor(cursor);
-            loadDotIndicators();
-        }
+        } else  // nothing is selected
+            mEventImagePagerAdapter.swapCursor(null);
+        loadDotIndicators();
     }
 
 }
