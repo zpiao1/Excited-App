@@ -12,6 +12,11 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
+        buildTypes.each {
+            it.buildConfigField 'String', 'GOOGLE_MAPS_KEY', '"AIzaSyB4YA-dPQzhhKRiwgy2odLVpLkc9cLmM0k"'
+            it.buildConfigField 'String', 'GOOGLE_MAPS_DIRECTIONS_KEY', '"AIzaSyA5yqnAAWqGmeIPMPq7-bunCnEXCu-aBq4"'
+            it.resValue 'string', 'google_maps_key', 'AIzaSyB4YA-dPQzhhKRiwgy2odLVpLkc9cLmM0k'
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -20,7 +25,7 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile fileTree(include: ['*.jar'], dir: 'libs')
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
@@ -29,4 +34,5 @@ dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.google.android.gms:play-services-maps:9.8.0'
     compile 'com.google.android.gms:play-services-location:9.8.0'
+    compile 'org.jsoup:jsoup:1.10.1'
 }

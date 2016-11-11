@@ -29,6 +29,7 @@ import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.adapters.EventImagePagerAdapter;
 import com.example.zpiao1.excited.adapters.IconAdapter;
 import com.example.zpiao1.excited.data.EventContract.EventEntry;
+import com.example.zpiao1.excited.sync.SyncUtils;
 
 import java.util.ArrayList;
 
@@ -37,10 +38,10 @@ public class MainActivity extends AppCompatActivity
         LoaderManager.LoaderCallbacks<Cursor> {
 
     // The indices for each column in EVENT_COLUMNS
-    public static final int COL_ROW_ID = 0;
-    public static final int COL_IMAGE_ID = 1;
-    public static final int COL_DATE = 2;
-    public static final int COL_TITLE = 3;
+    public static final int COLUMN_ID = 0;
+    public static final int COLUMN_TITLE = 1;
+    public static final int COLUMN_DATE = 2;
+    public static final int COLUMN_PICTURE_URL = 3;
     private static final float Y_CHANGE_THRESHOLD = 300f;
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
     private static final int TRANSPARENT_COLOR = 0x00000000;
@@ -48,9 +49,9 @@ public class MainActivity extends AppCompatActivity
     // The columns to be projected on
     private static final String[] EVENT_COLUMNS = new String[]{
             EventEntry._ID,
-            EventEntry.COLUMN_IMAGE_ID,
+            EventEntry.COLUMN_TITLE,
             EventEntry.COLUMN_DATE,
-            EventEntry.COLUMN_TITLE
+            EventEntry.COLUMN_PICTURE_URL
     };
     private IconAdapter mIconAdapter;
     private EventImagePagerAdapter mEventImagePagerAdapter;
@@ -103,6 +104,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Get a sync account
+        SyncUtils.createSyncAccount(this);
+
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -120,9 +125,25 @@ public class MainActivity extends AppCompatActivity
 
         // Add the events to the view pager
         mViewPager = (ViewPager) findViewById(R.id.event_view_pager);
+        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+            @Override
+            public void onPageScrolled(int position, float positionOffset,
+                                       int positionOffsetPixels) {
+            }
+
+            @Override
+            public void onPageSelected(int position) {
+                for (int i = 0; i < mEventImagePagerAdapter.getCount(); ++i)
+                    mDotsIndicator[i].setImageResource((i == position ?
+                            R.drawable.selected_item_dot : R.drawable.unselected_item_dot));
+            }
+
+            @Override
+            public void onPageScrollStateChanged(int state) {
+            }
+        });
         loadGridView();
 
-        createFakeData();
         getSupportLoaderManager().initLoader(LOADER_ID, null, this);
 
         mGarbageIconDefaultHeight = findViewById(R.id.garbage_image).getLayoutParams().height;
@@ -214,7 +235,6 @@ public class MainActivity extends AppCompatActivity
 
     private void loadDotIndicators() {
         // Create the dot indicators
-        // TODO might need to add background color
         mPagerIndicator.removeAllViewsInLayout();
         mDotsIndicator = new ImageView[mEventImagePagerAdapter.getCount()];
 
@@ -234,67 +254,48 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void loadImageViewPager() {
-
         loadDotIndicators();
-
-        mViewPager.addOnPageChangeListener(new ViewPager.OnPageChangeListener() {
-            @Override
-            public void onPageScrolled(int position, float positionOffset,
-                                       int positionOffsetPixels) {
-            }
-
-            @Override
-            public void onPageSelected(int position) {
-                for (int i = 0; i < mEventImagePagerAdapter.getCount(); ++i)
-                    mDotsIndicator[i].setImageResource((i == position ?
-                            R.drawable.selected_item_dot : R.drawable.unselected_item_dot));
-            }
-
-            @Override
-            public void onPageScrollStateChanged(int state) {
-            }
-        });
         mViewPager.setCurrentItem(0);
     }
 
-    private void createFakeData() {
-        // Clear the table first
-        getContentResolver().delete(EventEntry.CONTENT_URI, null, null);
-        // bulkInsert into the database through ContentProvider
-        ArrayList<ContentValues> valuesList = new ArrayList<>();
-
-        ContentValues boatPeopleValues = EventEntry.buildContentValues(
-                R.mipmap.boat_people,
-                "Sep 15",
-                "Boat People",
-                "7.00pm",
-                "9.00pm",
-                EventEntry.CATEGORY_ART,
-                "8 College Ave W, Singapore 138608");
-        ContentValues freeBabyValues = EventEntry.buildContentValues(
-                R.mipmap.free_baby_event_cradle_of_love,
-                "Sep 18",
-                "Free Baby Event Cradle Of Love",
-                "1:30pm",
-                "6 pm",
-                EventEntry.CATEGORY_KIDS,
-                "Pickering Street, Singapore 048659");
-        ContentValues freeYogaValues = EventEntry.buildContentValues(
-                R.mipmap.free_yoga_and_tea_session_with_dr_trish_corley,
-                "Sep 15",
-                "Free Yoga & Tea Session with Dr. Trish Corley",
-                "7:45PM",
-                "9.15PM",
-                EventEntry.CATEGORY_SPORTS,
-                "yoga in common, 10 Petain Rd, Singapore 208089");
-
-        valuesList.add(boatPeopleValues);
-        valuesList.add(freeBabyValues);
-        valuesList.add(freeYogaValues);
-
-        getContentResolver().bulkInsert(EventEntry.CONTENT_URI,
-                valuesList.toArray(new ContentValues[valuesList.size()]));
-    }
+//    private void createFakeData() {
+//        // Clear the table first
+//        getContentResolver().delete(EventEntry.CONTENT_URI, null, null);
+//        // bulkInsert into the database through ContentProvider
+//        ArrayList<ContentValues> valuesList = new ArrayList<>();
+//
+//        ContentValues boatPeopleValues = EventEntry.buildContentValues(
+//                R.mipmap.boat_people,
+//                "Sep 15",
+//                "Boat People",
+//                "7.00pm",
+//                "9.00pm",
+//                EventEntry.CATEGORY_ART,
+//                "8 College Ave W, Singapore 138608");
+//        ContentValues freeBabyValues = EventEntry.buildContentValues(
+//                R.mipmap.free_baby_event_cradle_of_love,
+//                "Sep 18",
+//                "Free Baby Event Cradle Of Love",
+//                "1:30pm",
+//                "6 pm",
+//                EventEntry.CATEGORY_KIDS,
+//                "Pickering Street, Singapore 048659");
+//        ContentValues freeYogaValues = EventEntry.buildContentValues(
+//                R.mipmap.free_yoga_and_tea_session_with_dr_trish_corley,
+//                "Sep 15",
+//                "Free Yoga & Tea Session with Dr. Trish Corley",
+//                "7:45PM",
+//                "9.15PM",
+//                EventEntry.CATEGORY_SPORTS,
+//                "yoga in common, 10 Petain Rd, Singapore 208089");
+//
+//        valuesList.add(boatPeopleValues);
+//        valuesList.add(freeBabyValues);
+//        valuesList.add(freeYogaValues);
+//
+//        getContentResolver().bulkInsert(EventEntry.CONTENT_URI,
+//                valuesList.toArray(new ContentValues[valuesList.size()]));
+//    }
 
     public void changeIconGradually(float startTouchY, float currentTouchY) {
         float dy = currentTouchY - startTouchY;
@@ -395,9 +396,12 @@ public class MainActivity extends AppCompatActivity
     public Loader<Cursor> onCreateLoader(int id, Bundle args) {
         // If mCheckedCount = 0
         // Query the same thing as follows but with _id=-1, which always return an empty cursor
+        // SELECT _id, title, date, picture_url
+        // FROM events
+        // WHERE _id = -1;
 
-        // Query the _id, image_id, date and title for events that are not removed
-        // SELECT _id, image_id, date, title
+        // Query the _id, title, date and picture_url for events that are not removed
+        // SELECT _id, title, date, picture_url
         // FROM events
         // WHERE is_removed = 0
         // AND category in (<mCategoryCheckedState>);
@@ -413,26 +417,17 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onLoadFinished(Loader<Cursor> loader, Cursor data) {
-//        Log.v(LOG_TAG, "onLoadFinished: Check the cursor");
-//        Log.v(LOG_TAG, "_id, image_id, date, title: ");
-//        while (data.moveToNext()) {
-//            long id = data.getLong(COL_ROW_ID);
-//            int imageId = data.getInt(COL_IMAGE_ID);
-//            String date = data.getString(COL_DATE);
-//            String title = data.getString(COL_TITLE);
-//            Log.v(LOG_TAG, Long.toString(id) + ", " + Integer.toString(imageId) + ", " + date + ", " + title);
-//        }
         if (mEventImagePagerAdapter == null) {
             mEventImagePagerAdapter = new EventImagePagerAdapter(getSupportFragmentManager(), data);
             mViewPager.setAdapter(mEventImagePagerAdapter);
         } else
-            mEventImagePagerAdapter.swapCursor(data);
+            mEventImagePagerAdapter.changeCursor(data);
         loadImageViewPager();
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> loader) {
-        mEventImagePagerAdapter.swapCursor(null);
+        mEventImagePagerAdapter.changeCursor(null);
     }
 
     public void onCategoryCheckedChange(int position, boolean isChecked) {
@@ -447,21 +442,21 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void resetEventImagePagers() {
-        if (mCheckedCount != 0) {
-            String selection = buildSelection(mCheckedCount);
-            String[] selectionArgs = buildSelectionArgs(mCheckedCount, mCategoryCheckedStates);
-            Log.v(LOG_TAG, "selection: " + selection);
-            Cursor cursor = getContentResolver().query(
-                    EventEntry.CONTENT_URI,
-                    EVENT_COLUMNS,
-                    selection,
-                    selectionArgs,
-                    null);
-            mEventImagePagerAdapter.swapCursor(cursor);
-        } else  // nothing is selected
-            mEventImagePagerAdapter.swapCursor(null);
-        loadDotIndicators();
-    }
+//    private void resetEventImagePagers() {
+//        if (mCheckedCount != 0) {
+//            String selection = buildSelection(mCheckedCount);
+//            String[] selectionArgs = buildSelectionArgs(mCheckedCount, mCategoryCheckedStates);
+//            Log.v(LOG_TAG, "selection: " + selection);
+//            Cursor cursor = getContentResolver().query(
+//                    EventEntry.CONTENT_URI,
+//                    EVENT_COLUMNS,
+//                    selection,
+//                    selectionArgs,
+//                    null);
+//            mEventImagePagerAdapter.changeCursor(cursor);
+//        } else  // nothing is selected
+//            mEventImagePagerAdapter.changeCursor(null);
+//        loadDotIndicators();
+//    }
 
 }

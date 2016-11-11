@@ -146,28 +146,17 @@ public class EventProvider extends ContentProvider {
 
     private Uri insertHelper(Uri uri, ContentValues contentValues) {
         // Lots of sanity checks
-        checkContainsIntegerAndNotNull(contentValues, EventEntry.COLUMN_IMAGE_ID);
-        if (!EventEntry.isValidImageId(contentValues.getAsInteger(EventEntry.COLUMN_IMAGE_ID)))
-            throw new IllegalArgumentException("image_id must be non-negative");
-
-        checkContainsStringAndNotNull(contentValues, EventEntry.COLUMN_TITLE);
-
         checkContainsIntegerAndNotNull(contentValues, EventEntry.COLUMN_CATEGORY);
         if (!EventEntry.isValidCategory(contentValues.getAsInteger(EventEntry.COLUMN_CATEGORY)))
             throw new IllegalArgumentException("category must be in [0, 5]");
 
-        checkContainsStringAndNotNull(contentValues, EventEntry.COLUMN_DATE);
-        checkContainsStringAndNotNull(contentValues, EventEntry.COLUMN_START_TIME);
-        checkContainsStringAndNotNull(contentValues, EventEntry.COLUMN_END_TIME);
-        checkContainsStringAndNotNull(contentValues, EventEntry.COLUMN_VENUE);
-
-        checkContainsIntegerAndNotNull(contentValues, EventEntry.COLUMN_IS_REMOVED);
-        if (!EventEntry.isValidBoolean(contentValues.getAsInteger(EventEntry.COLUMN_IS_REMOVED)))
-            throw new IllegalArgumentException("is_removed must be 0 or 1");
-
-        checkContainsIntegerAndNotNull(contentValues, EventEntry.COLUMN_IS_STARRED);
-        if (!EventEntry.isValidBoolean(contentValues.getAsInteger(EventEntry.COLUMN_IS_STARRED)))
-            throw new IllegalArgumentException("is_starred must be 0 or 1");
+//        checkContainsIntegerAndNotNull(contentValues, EventEntry.COLUMN_IS_REMOVED);
+//        if (!EventEntry.isValidBoolean(contentValues.getAsInteger(EventEntry.COLUMN_IS_REMOVED)))
+//            throw new IllegalArgumentException("is_removed must be 0 or 1");
+//
+//        checkContainsIntegerAndNotNull(contentValues, EventEntry.COLUMN_IS_STARRED);
+//        if (!EventEntry.isValidBoolean(contentValues.getAsInteger(EventEntry.COLUMN_IS_STARRED)))
+//            throw new IllegalArgumentException("is_starred must be 0 or 1");
 
         // Actual insertion
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
@@ -180,30 +169,21 @@ public class EventProvider extends ContentProvider {
 
     private int updateHelper(ContentValues contentValues, String selection, String[] selectionArgs) {
         // Sanity checks to prevent invalid non-null values
-        Integer imageId = contentValues.getAsInteger(EventEntry.COLUMN_IMAGE_ID);
-        if (imageId != null && !EventEntry.isValidImageId(imageId))
-            throw new IllegalArgumentException("image_id must be non-negative");
-
         Integer category = contentValues.getAsInteger(EventEntry.COLUMN_CATEGORY);
         if (category != null && !EventEntry.isValidCategory(category))
             throw new IllegalArgumentException("category must be in [0, 5]");
 
-        Integer isRemoved = contentValues.getAsInteger(EventEntry.COLUMN_IS_REMOVED);
-        if (isRemoved != null && !EventEntry.isValidBoolean(isRemoved))
-            throw new IllegalArgumentException("is_removed must be 0 or 1");
-
-        Integer isStarred = contentValues.getAsInteger(EventEntry.COLUMN_IS_STARRED);
-        if (isStarred != null && !EventEntry.isValidBoolean(isStarred))
-            throw new IllegalArgumentException("is_starred must be 0 or 1");
+//        Integer isRemoved = contentValues.getAsInteger(EventEntry.COLUMN_IS_REMOVED);
+//        if (isRemoved != null && !EventEntry.isValidBoolean(isRemoved))
+//            throw new IllegalArgumentException("is_removed must be 0 or 1");
+//
+//        Integer isStarred = contentValues.getAsInteger(EventEntry.COLUMN_IS_STARRED);
+//        if (isStarred != null && !EventEntry.isValidBoolean(isStarred))
+//            throw new IllegalArgumentException("is_starred must be 0 or 1");
 
         // Action update
         SQLiteDatabase db = mDbHelper.getWritableDatabase();
         return db.update(EventEntry.TABLE_NAME, contentValues, selection, selectionArgs);
-    }
-
-    private void checkContainsStringAndNotNull(ContentValues contentValues, String columnName) {
-        if (contentValues.getAsString(columnName) == null)
-            throw new IllegalArgumentException(columnName + " cannot be NULL");
     }
 
     private void checkContainsIntegerAndNotNull(ContentValues contentValues, String columnName) {

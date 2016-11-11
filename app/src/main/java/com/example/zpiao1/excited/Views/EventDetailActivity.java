@@ -20,6 +20,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,6 +32,7 @@ import android.widget.Toast;
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.EventContract.EventEntry;
 import com.example.zpiao1.excited.logic.GetTravelTimeTask;
+import com.example.zpiao1.excited.logic.LoadImageTask;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -58,21 +60,19 @@ public class EventDetailActivity extends AppCompatActivity
     // Projection and project indices for the event associated with this Activity
     private static final String[] EVENT_PROJECTION = new String[]{
             EventEntry._ID,
-            EventEntry.COLUMN_IMAGE_ID,
             EventEntry.COLUMN_TITLE,
             EventEntry.COLUMN_CATEGORY,
             EventEntry.COLUMN_DATE,
-            EventEntry.COLUMN_START_TIME,
-            EventEntry.COLUMN_END_TIME,
-            EventEntry.COLUMN_VENUE
+            EventEntry.COLUMN_VENUE,
+            EventEntry.COLUMN_PICTURE_URL,
+            EventEntry.COLUMN_POSTAL_ADDRESS
     };
-    private static final int EVENT_INDEX_IMAGE_ID = 1;
-    private static final int EVENT_INDEX_TITLE = 2;
-    private static final int EVENT_INDEX_CATEGORY = 3;
-    private static final int EVENT_INDEX_DATE = 4;
-    private static final int EVENT_INDEX_START_TIME = 5;
-    private static final int EVENT_INDEX_END_TIME = 6;
-    private static final int EVENT_INDEX_VENUE = 7;
+    private static final int COLUMN_TITLE = 1;
+    private static final int COLUMN_CATEGORY = 2;
+    private static final int COLUMN_DATE = 3;
+    private static final int COLUMN_VENUE = 4;
+    private static final int COLUMN_PICTURE_URL = 5;
+    private static final int COLUMN_POSTAL_ADDRESS = 6;
 
     // Projection and project indices for the counts of starred and removed items
     private static final String[] COUNT_PROJECTION = new String[]{
@@ -99,8 +99,9 @@ public class EventDetailActivity extends AppCompatActivity
     private TextView mDetailTitle;
     private TextView mDetailCategory;
     private TextView mDetailDate;
-    private TextView mDetailTime;
     private TextView mDetailVenue;
+    private TextView mDetailDrivingTime;
+    private TextView mDetailTransitTime;
 
     private TextView mRemovedCountView;
     private TextView mStarredCountView;
@@ -160,8 +161,9 @@ public class EventDetailActivity extends AppCompatActivity
         mDetailTitle = (TextView) findViewById(R.id.detail_title);
         mDetailCategory = (TextView) findViewById(R.id.detail_category);
         mDetailDate = (TextView) findViewById(R.id.detail_date);
-        mDetailTime = (TextView) findViewById(R.id.detail_time);
         mDetailVenue = (TextView) findViewById(R.id.detail_venue);
+        mDetailDrivingTime = (TextView) findViewById(R.id.detail_driving_time);
+        mDetailTransitTime = (TextView) findViewById(R.id.detail_transit_time);
 
         // Get data from database
         Uri queryUri = getIntent().getData();
@@ -388,7 +390,27 @@ public class EventDetailActivity extends AppCompatActivity
         Geocoder geocoder = new Geocoder(this);
         List<Address> addresses;
         double latitude = 0, longitude = 0;
-        String venue = mEventCursor.getString(EVENT_INDEX_VENUE);
+
+        String postalAddress = mEventCursor.getString(COLUMN_POSTAL_ADDRESS);
+        String venue = mEventCursor.getString(COLUMN_VENUE);
+
+        // Use the postal address to get the latitude and longitude first
+        if (!TextUtils.isEmpty(postalAddress)) {
+            try {
+                addresses = geocoder.getFromLocationName(postalAddress, 1);
+                latitude = addresses.get(0).getLatitude();
+                longitude = addresses.get(0).getLongitude();
+                mDestinationLatLng = new LatLng(latitude, longitude);
+                return;
+            } catch (IndexOutOfBoundsException e) {
+                Log.e(LOG_TAG, "No latitude and longitude for address: " + postalAddress +
+                        " is found.");
+            } catch (IOException e) {
+                Log.e(LOG_TAG, "Failure in getting destination coordinates", e);
+            }
+        }
+        // If the postal address does not exist or cannot not be converted to latlng correctly
+        // use the venue
         try {
             addresses = geocoder.getFromLocationName(venue, 5);
             latitude = addresses.get(0).getLatitude();
@@ -404,25 +426,22 @@ public class EventDetailActivity extends AppCompatActivity
     }
 
     private void updateTravelTimeUI() {
-        new GetTravelTimeTask(this).execute(mCurrentLatLng, mDestinationLatLng);
+        new GetTravelTimeTask(mDetailDrivingTime, mDetailTransitTime, mCurrentLatLng,
+                mDestinationLatLng).execute();
     }
 
     private void updateBasicUI() {
-        int imageId = mEventCursor.getInt(EVENT_INDEX_IMAGE_ID);
-        String title = mEventCursor.getString(EVENT_INDEX_TITLE);
-        int categoryId = mEventCursor.getInt(EVENT_INDEX_CATEGORY);
+        String title = mEventCursor.getString(COLUMN_TITLE);
+        int categoryId = mEventCursor.getInt(COLUMN_CATEGORY);
         String category = EventEntry.getCatetoryFromId(categoryId);
-        String date = mEventCursor.getString(EVENT_INDEX_DATE);
-        String startTime = mEventCursor.getString(EVENT_INDEX_START_TIME);
-        String endTime = mEventCursor.getString(EVENT_INDEX_END_TIME);
-        String venue = mEventCursor.getString(EVENT_INDEX_VENUE);
+        String date = mEventCursor.getString(COLUMN_DATE);
+        String venue = mEventCursor.getString(COLUMN_VENUE);
+        String pictureUrl = mEventCursor.getString(COLUMN_PICTURE_URL);
 
-        String time = startTime + " - " + endTime;
-        mDetailEventImage.setImageResource(imageId);
+        new LoadImageTask(mDetailEventImage, pictureUrl).execute();
         mDetailTitle.setText(title);
         mDetailCategory.setText(category);
         mDetailDate.setText(date);
-        mDetailTime.setText(time);
         mDetailVenue.setText(venue);
     }
 

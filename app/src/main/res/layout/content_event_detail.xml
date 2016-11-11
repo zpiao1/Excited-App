@@ -70,28 +70,6 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <TextView
-                android:layout_width="64dp"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="16dp"
-                android:text="@string/time"
-                android:textAllCaps="true"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/detail_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Medium"
-                tools:text="7:45PM - 9.15PM" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:layout_marginBottom="8dp"
             android:orientation="horizontal">
 

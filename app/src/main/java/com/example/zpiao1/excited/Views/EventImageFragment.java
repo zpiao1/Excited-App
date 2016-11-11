@@ -15,16 +15,17 @@ import android.widget.TextView;
 
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.EventContract.EventEntry;
+import com.example.zpiao1.excited.logic.LoadImageTask;
 import com.example.zpiao1.excited.logic.OnSwipeListener;
 
 public class EventImageFragment extends Fragment {
 
     private static final String LOG_TAG = EventImageFragment.class.getSimpleName();
     private View mRootView;
-    private long mRowId;
+    private long mId;
     private String mTitle;
     private String mDate;
-    private int mImageId;
+    private String mPictureUrl;
 
     public EventImageFragment() {
     }
@@ -32,10 +33,10 @@ public class EventImageFragment extends Fragment {
     public static EventImageFragment getInstance(Cursor cursor) {
         EventImageFragment fragment = new EventImageFragment();
         // Extract the information from the cursor here
-        fragment.mRowId = cursor.getLong(MainActivity.COL_ROW_ID);
-        fragment.mTitle = cursor.getString(MainActivity.COL_TITLE);
-        fragment.mDate = cursor.getString(MainActivity.COL_DATE);
-        fragment.mImageId = cursor.getInt(MainActivity.COL_IMAGE_ID);
+        fragment.mId = cursor.getLong(MainActivity.COLUMN_ID);
+        fragment.mTitle = cursor.getString(MainActivity.COLUMN_TITLE);
+        fragment.mDate = cursor.getString(MainActivity.COLUMN_DATE);
+        fragment.mPictureUrl = cursor.getString(MainActivity.COLUMN_PICTURE_URL);
 //        Log.v(LOG_TAG, "cursor position: " + cursor.getPosition());
         return fragment;
     }
@@ -59,7 +60,7 @@ public class EventImageFragment extends Fragment {
         TextView titleText = (TextView) mRootView.findViewById(R.id.title_text);
 
         // Set corresponding data
-        eventImage.setImageResource(mImageId);
+        new LoadImageTask(eventImage, mPictureUrl).execute();
         dateText.setText(mDate);
         titleText.setText(mTitle);
     }
@@ -89,6 +90,6 @@ public class EventImageFragment extends Fragment {
     }
 
     private Uri getUriOfImage() {
-        return ContentUris.withAppendedId(EventEntry.CONTENT_URI, mRowId);
+        return ContentUris.withAppendedId(EventEntry.CONTENT_URI, mId);
     }
 }

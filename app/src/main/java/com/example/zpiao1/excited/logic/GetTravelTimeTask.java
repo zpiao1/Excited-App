@@ -1,12 +1,11 @@
 package com.example.zpiao1.excited.logic;
 
-import android.app.Activity;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.TextView;
 
-import com.example.zpiao1.excited.R;
+import com.example.zpiao1.excited.BuildConfig;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONArray;
@@ -22,7 +21,8 @@ import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class GetTravelTimeTask extends AsyncTask<LatLng, Void, String[]> {
+public class GetTravelTimeTask extends AsyncTask<Void, Void, Void> {
+
     private static final Uri QUERY_BASE = Uri.parse("https://maps.googleapis.com/maps/api/directions/json?");
     private static final String QUERY_PARAM_ORIGIN = "origin";
     private static final String QUERY_PARAM_DESTINATION = "destination";
@@ -34,12 +34,22 @@ public class GetTravelTimeTask extends AsyncTask<LatLng, Void, String[]> {
     private static final String JSON_LEGS = "legs";
     private static final String JSON_DURATION = "duration";
     private static final String JSON_TEXT = "text";
-    private static final String LOG_TAG = GetTravelTimeTask.class.getSimpleName();
-    private Activity mActivity;
 
-    public GetTravelTimeTask(Activity activity) {
-        super();
-        mActivity = activity;
+    private static final String LOG_TAG = GetTravelTimeTask.class.getSimpleName();
+
+    private TextView mDrivingTextView;
+    private TextView mTransitTextView;
+    private LatLng mCurrentLocationLatLng;
+    private LatLng mDestinationLatLng;
+    private String mDrivingTime;
+    private String mTransitTime;
+
+    public GetTravelTimeTask(TextView drivingTextView, TextView transitTextView,
+                             LatLng currentLocationLatLng, LatLng destinationLatLng) {
+        mDrivingTextView = drivingTextView;
+        mTransitTextView = transitTextView;
+        mCurrentLocationLatLng = currentLocationLatLng;
+        mDestinationLatLng = destinationLatLng;
     }
 
     private static String formatLatLng(LatLng latLng) {
@@ -47,29 +57,27 @@ public class GetTravelTimeTask extends AsyncTask<LatLng, Void, String[]> {
     }
 
     @Override
-    protected String[] doInBackground(LatLng... latLngs) {
-        if (latLngs.length < 2)
-            throw new IllegalArgumentException("Incorrect number of LatLngs");
+    protected Void doInBackground(Void... Voids) {
 
-        String travelDrivingUrlStr = formatRequestUrl(formatLatLng(latLngs[0]),
-                formatLatLng(latLngs[1]), QUERY_PARAM_MODE_DRIVING);
-        String travelTransitUrlStr = formatRequestUrl(formatLatLng(latLngs[0]),
-                formatLatLng(latLngs[1]), QUERY_PARAM_MODE_TRANSIT);
+        String travelDrivingUrlStr = formatRequestUrl(formatLatLng(mCurrentLocationLatLng),
+                formatLatLng(mDestinationLatLng), QUERY_PARAM_MODE_DRIVING);
+        String travelTransitUrlStr = formatRequestUrl(formatLatLng(mCurrentLocationLatLng),
+                formatLatLng(mDestinationLatLng), QUERY_PARAM_MODE_TRANSIT);
 
         String drivingJsonStr = makeHttpRequest(travelDrivingUrlStr);
         String transitJsonStr = makeHttpRequest(travelTransitUrlStr);
 
-        String drivingTime = getTravelTimeFromJsonStr(drivingJsonStr);
-        String transitTime = getTravelTimeFromJsonStr(transitJsonStr);
+        mDrivingTime = getTravelTimeFromJsonStr(drivingJsonStr);
+        mTransitTime = getTravelTimeFromJsonStr(transitJsonStr);
 
-        Log.v(LOG_TAG, "drivingTime: " + drivingTime);
-        Log.v(LOG_TAG, "transitTime: " + transitTime);
+        Log.v(LOG_TAG, "drivingTime: " + mDrivingTime);
+        Log.v(LOG_TAG, "transitTime: " + mTransitTime);
 
-        return new String[]{drivingTime, transitTime};
+        return null;
     }
 
     private String getDirectionsKey() {
-        return mActivity.getString(R.string.google_maps_directions_key);
+        return BuildConfig.GOOGLE_MAPS_DIRECTIONS_KEY;
     }
 
     private String formatRequestUrl(String origin, String destination, String mode) {
@@ -139,12 +147,8 @@ public class GetTravelTimeTask extends AsyncTask<LatLng, Void, String[]> {
     }
 
     @Override
-    protected void onPostExecute(String[] strings) {
-        TextView detailDrivingTimeText = (TextView)
-                mActivity.findViewById(R.id.detail_driving_time);
-        detailDrivingTimeText.setText(strings[0]);
-        TextView detailTransitTimeText = (TextView)
-                mActivity.findViewById(R.id.detail_transit_time);
-        detailTransitTimeText.setText(strings[1]);
+    protected void onPostExecute(Void aVoid) {
+        mDrivingTextView.setText(mDrivingTime);
+        mTransitTextView.setText(mTransitTime);
     }
 }
