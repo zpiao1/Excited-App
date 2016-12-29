@@ -54,24 +54,6 @@
             android:name=".data.EventProvider"
             android:authorities="com.example.zpiao1.excited" />
 
-        <service android:name=".sync.AccountService">
-            <intent-filter>
-                <action android:name="android.accounts.AccountAuthenticator" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accounts.AccountAuthenticator"
-                android:resource="@xml/authenticator" />
-        </service>
-        <service
-            android:name=".sync.SyncService"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.content.SyncAdapter" />
-            </intent-filter>
-            <meta-data
-                android:name="android.content.SyncAdapter"
-                android:resource="@xml/syncadapter" />
-        </service>
     </application>
 
 </manifest>

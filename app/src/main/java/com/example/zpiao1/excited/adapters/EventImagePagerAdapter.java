@@ -1,58 +1,39 @@
 package com.example.zpiao1.excited.adapters;
 
-import android.database.Cursor;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
+import com.example.zpiao1.excited.data.SimpleEvent;
 import com.example.zpiao1.excited.views.EventImageFragment;
+
+import java.util.List;
 
 public class EventImagePagerAdapter extends FragmentStatePagerAdapter {
 
     private static final String LOG_TAG = EventImagePagerAdapter.class.getSimpleName();
-    private Cursor mCursor;
+    private List<SimpleEvent> mSimpleEvents;
 
-    public EventImagePagerAdapter(FragmentManager fragmentManager, Cursor cursor) {
-        super(fragmentManager);
-        mCursor = cursor;
+
+    public EventImagePagerAdapter(FragmentManager fm, List<SimpleEvent> simpleEvents) {
+        super(fm);
+        mSimpleEvents = simpleEvents;
     }
 
     @Override
     public Fragment getItem(int position) {
-        mCursor.moveToPosition(position);
-        return EventImageFragment.getInstance(mCursor);
+        return EventImageFragment.getInstance(mSimpleEvents.get(position));
     }
 
     @Override
     public int getCount() {
-        if (mCursor == null)
-            return 0;
-        return mCursor.getCount();
-    }
-
-    public Cursor getCursor() {
-        return mCursor;
-    }
-
-    public Cursor swapCursor(Cursor newCursor) {
-        if (newCursor == mCursor)
-            return null;
-        Cursor oldCursor = mCursor;
-        mCursor = newCursor;
-        if (newCursor != null)
-            notifyDataSetChanged();
-
-        return oldCursor;
-    }
-
-    public void changeCursor(Cursor cursor) {
-        Cursor old = swapCursor(cursor);
-        if (old != null)
-            old.close();
+        return mSimpleEvents.size();
     }
 
     @Override
     public int getItemPosition(Object object) {
+        if (object instanceof SimpleEvent)
+            return mSimpleEvents.indexOf(object);
         return POSITION_NONE;
     }
 }

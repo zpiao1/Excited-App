@@ -18,7 +18,9 @@
             android:layout_centerInParent="true"
             tools:src="@mipmap/free_yoga_and_tea_session_with_dr_trish_corley" />
 
+
         <LinearLayout
+            android:id="@+id/linear_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
@@ -32,6 +34,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
+                android:padding="4dp"
                 android:textAllCaps="true"
                 android:textAppearance="?android:attr/textAppearanceMedium"
                 android:textColor="@android:color/white"
@@ -43,12 +46,15 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
+                android:padding="4dp"
                 android:textAllCaps="true"
                 android:textAppearance="?android:attr/textAppearanceSmall"
                 android:textColor="@android:color/white"
                 tools:text="Event Date" />
 
+
         </LinearLayout>
+
 
     </RelativeLayout>
 

@@ -73,7 +73,7 @@ public class IconAdapter extends ArrayAdapter<CategoryIcon> {
         button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                ((MainActivity) getContext()).onCategoryCheckedChange(position, b);
+                ((MainActivity) getContext()).onCategoryCheckedChanged(position, b);
             }
         });
 
