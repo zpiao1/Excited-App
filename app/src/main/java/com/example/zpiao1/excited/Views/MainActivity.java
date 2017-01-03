@@ -1,5 +1,6 @@
 package com.example.zpiao1.excited.views;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
@@ -22,8 +23,12 @@ import android.widget.ImageView;
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.adapters.EventImagePagerAdapter;
 import com.example.zpiao1.excited.adapters.IconAdapter;
+import com.example.zpiao1.excited.data.CategoryIcon;
 import com.example.zpiao1.excited.data.SimpleEvent;
 import com.example.zpiao1.excited.server.IEventRequest;
+import com.example.zpiao1.excited.server.ServerUtils;
+import com.facebook.FacebookSdk;
+import com.facebook.appevents.AppEventsLogger;
 import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 
 import java.util.ArrayList;
@@ -42,8 +47,8 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final float Y_CHANGE_THRESHOLD = 300f;
 
-
-    private static final String[] CATEGORIES = {"movie", "art", "sports", "nightlife", "kids", "expo"};
+    private static final String[] CATEGORIES =
+            {"movie", "art", "sports", "nightlife", "kids", "expo"};
 
     private IconAdapter mIconAdapter;
     private EventImagePagerAdapter mPagerAdapter;
@@ -61,10 +66,11 @@ public class MainActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Get a sync account
-//        SyncUtils.createSyncAccount(this);
-
         setContentView(R.layout.activity_main);
+        // Logging App Activations
+        FacebookSdk.sdkInitialize(getApplicationContext());
+        AppEventsLogger.activateApp(getApplication());
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
@@ -76,7 +82,6 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-
 
         // Add the events to the view pager
         mViewPager = (ViewPager) findViewById(R.id.event_view_pager);
@@ -116,6 +121,9 @@ public class MainActivity extends AppCompatActivity
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        } else if (id == R.id.action_login) {
+            // Start the LoginActivity
+            startActivity(new Intent(this, LoginActivity.class));
         }
 
         return super.onOptionsItemSelected(item);
@@ -224,46 +232,9 @@ public class MainActivity extends AppCompatActivity
     }
 
     public void onImageRemoved(Uri uri) {
-//        // Uri contains the id of the row where is_removed is set to true (1)
-//        ContentValues values = new ContentValues();
-//        values.put(EventEntry.COLUMN_IS_REMOVED, EventEntry.BOOLEAN_TRUE);
-//        // The selection and selection args is given in the ContentProvider since we just update one
-//        // row
-//        getContentResolver().update(uri, values, null, null);
-//
-////        resetEventImagePagers();
-//        getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
-//
-//        // Show a toast that the image is removed successfully
-//        String[] projection = new String[]{EventEntry.COLUMN_TITLE};
-//        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
-//        if (cursor == null)
-//            throw new RuntimeException("Cursor is null");
-//        cursor.moveToFirst();
-//        String title = cursor.getString(0);
-//        Toast.makeText(this, title + " is removed", Toast.LENGTH_SHORT).show();
-//        cursor.close();
     }
 
     public void onImageStarred(Uri uri) {
-//        // Uri contains the id of the row where is_starred is set to true (1)
-//        ContentValues values = new ContentValues();
-//        values.put(EventEntry.COLUMN_IS_STARRED, EventEntry.BOOLEAN_TRUE);
-//        // update the database
-//        getContentResolver().update(uri, values, null, null);
-//
-//        getSupportLoaderManager().restartLoader(LOADER_ID, null, this);
-//
-//        // Show a toast that the image is starred
-//        String[] projection = new String[]{EventEntry.COLUMN_TITLE};
-//        Cursor cursor = getContentResolver().query(uri, projection, null, null, null);
-//        if (cursor == null)
-//            throw new RuntimeException("Cursor is null");
-//        cursor.moveToFirst();
-//        Log.v(LOG_TAG, "onImageStarred: cursor size: " + cursor.getCount());
-//        String title = cursor.getString(0);
-//        Toast.makeText(this, title + " is starred", Toast.LENGTH_SHORT).show();
-//        cursor.close();
     }
 
 
@@ -279,7 +250,7 @@ public class MainActivity extends AppCompatActivity
 
     private void fetchEvents() {
         IEventRequest request = new Retrofit.Builder()
-                .baseUrl(IEventRequest.BASE_URL)
+                .baseUrl(ServerUtils.BASE_URL)
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()

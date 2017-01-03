@@ -50,10 +50,10 @@ public class EventImageFragment extends Fragment {
         TextView titleText = (TextView) mRootView.findViewById(R.id.title_text);
 
         // Set corresponding data
-        dateText.setText(mSimpleEvent.getDate());
-        titleText.setText(mSimpleEvent.getTitle());
+        dateText.setText(mSimpleEvent.date);
+        titleText.setText(mSimpleEvent.title);
         Glide.with(this)
-                .load(mSimpleEvent.getPictureUrl())
+                .load(mSimpleEvent.pictureUrl)
                 .into(eventImage);
     }
 
@@ -75,7 +75,7 @@ public class EventImageFragment extends Fragment {
             public void onClick() {
                 // Start a EventDetailActivity with the data in the Uri
                 Intent intent = new Intent(getActivity(), EventDetailActivity.class);
-                intent.putExtra("_id", mSimpleEvent.getId());
+                intent.putExtra("_id", mSimpleEvent.id);
 //                intent.setData(getUriOfImage());
                 startActivity(intent);
             }

@@ -7,10 +7,6 @@ import android.view.View;
 
 import com.example.zpiao1.excited.views.MainActivity;
 
-/**
- * Created by zpiao on 10/1/2016.
- */
-
 public abstract class OnSwipeListener implements View.OnTouchListener {
     private static final String LOG_TAG = OnSwipeListener.class.getSimpleName();
     private float mLastViewY;

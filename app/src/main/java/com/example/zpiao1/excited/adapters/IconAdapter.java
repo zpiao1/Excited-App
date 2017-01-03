@@ -17,7 +17,7 @@ import android.widget.TextView;
 import android.widget.ToggleButton;
 
 import com.example.zpiao1.excited.R;
-import com.example.zpiao1.excited.views.CategoryIcon;
+import com.example.zpiao1.excited.data.CategoryIcon;
 import com.example.zpiao1.excited.views.MainActivity;
 
 import java.util.List;

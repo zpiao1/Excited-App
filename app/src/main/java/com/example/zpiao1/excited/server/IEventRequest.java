@@ -11,7 +11,6 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface IEventRequest {
-    String BASE_URL = "http://54.169.173.170:3000/";
 
     @GET("api/events/")
     Observable<List<SimpleEvent>> getEvents(@Query("categories") String categories);

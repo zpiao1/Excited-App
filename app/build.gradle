@@ -12,11 +12,6 @@ android {
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
-        buildTypes.each {
-            it.buildConfigField 'String', 'GOOGLE_MAPS_KEY', '"AIzaSyB4YA-dPQzhhKRiwgy2odLVpLkc9cLmM0k"'
-            it.buildConfigField 'String', 'GOOGLE_MAPS_SERVICES_API_KEY', '"AIzaSyA5yqnAAWqGmeIPMPq7-bunCnEXCu-aBq4"'
-            it.resValue 'string', 'google_maps_key', 'AIzaSyB4YA-dPQzhhKRiwgy2odLVpLkc9cLmM0k'
-        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -46,4 +41,5 @@ dependencies {
     compile 'com.android.support:cardview-v7:25.1.0'
     compile 'com.google.maps:google-maps-services:0.1.17'
     compile 'com.android.support:percent:25.1.0'
+    compile 'com.facebook.android:facebook-android-sdk:4.18.0'
 }

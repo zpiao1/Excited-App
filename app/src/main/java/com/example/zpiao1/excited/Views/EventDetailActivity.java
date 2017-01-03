@@ -4,9 +4,9 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
-import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
@@ -26,10 +26,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
-import com.example.zpiao1.excited.BuildConfig;
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.Event;
 import com.example.zpiao1.excited.server.IEventRequest;
+import com.example.zpiao1.excited.server.ServerUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -77,12 +77,12 @@ public class EventDetailActivity extends AppCompatActivity
     private GeoApiContext mContext;
 
     private ImageView mDetailEventImage;
-    private TextView mDetailTitle;
     private TextView mDetailCategory;
     private TextView mDetailDate;
     private TextView mDetailVenue;
     private TextView mDetailDrivingTime;
     private TextView mDetailTransitTime;
+    private CollapsingToolbarLayout mCollapsingToolbar;
 
     private TextView mRemovedCountView;
     private TextView mStarredCountView;
@@ -120,14 +120,14 @@ public class EventDetailActivity extends AppCompatActivity
         navigationView.setNavigationItemSelectedListener(this);
 
         mContext = new GeoApiContext()
-                .setApiKey(BuildConfig.GOOGLE_MAPS_SERVICES_API_KEY);
+                .setApiKey(getString(R.string.google_maps_service_api_key));
 
         // Setup Google API client
         buildGoogleApiClient();
 
         // Initialize the views
+        mCollapsingToolbar = (CollapsingToolbarLayout) findViewById(R.id.collapsing_toolbar);
         mDetailEventImage = (ImageView) findViewById(R.id.detail_event_image);
-        mDetailTitle = (TextView) findViewById(R.id.detail_title);
         mDetailCategory = (TextView) findViewById(R.id.detail_category);
         mDetailDate = (TextView) findViewById(R.id.detail_date);
         mDetailVenue = (TextView) findViewById(R.id.detail_venue);
@@ -225,15 +225,9 @@ public class EventDetailActivity extends AppCompatActivity
         mGoogleMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
             @Override
             public void onMapLoaded() {
-                if (Looper.myLooper() == Looper.getMainLooper()) {
-                    Log.d(TAG, "onMapLoaded is on main thread");
-                } else {
-                    Log.d(TAG, "onMapLoaded is not on main thread");
-                }
                 mMapLoaded = true;
                 tryToGetEstimatedTime();
                 tryToSetupMapUi();
-                Log.d(TAG, "countedDown onMapLoaded");
             }
         });
     }
@@ -331,11 +325,6 @@ public class EventDetailActivity extends AppCompatActivity
             }
 
         }
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            Log.d(TAG, "onConnected callback is on main thread");
-        } else {
-            Log.d(TAG, "onConnected callback is not on main thread");
-        }
     }
 
     @Override
@@ -368,7 +357,7 @@ public class EventDetailActivity extends AppCompatActivity
     private void getEvent() {
         String id = getIntent().getStringExtra("_id");
         IEventRequest request = new Retrofit.Builder()
-                .baseUrl(IEventRequest.BASE_URL)
+                .baseUrl(ServerUtils.BASE_URL)
                 .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
@@ -380,24 +369,18 @@ public class EventDetailActivity extends AppCompatActivity
                     @Override
                     public synchronized void accept(Event event) throws Exception {
                         // Set up the UI
-                        mDetailTitle.setText(event.getTitle());
-                        mDetailCategory.setText(event.getCategory());
-                        mDetailDate.setText(event.getDate());
-                        mDetailVenue.setText(event.getVenue());
+                        mCollapsingToolbar.setTitle(event.title);
+                        mDetailCategory.setText(event.category);
+                        mDetailDate.setText(event.date);
+                        mDetailVenue.setText(event.venue);
                         Glide.with(EventDetailActivity.this)
-                                .load(event.getPictureUrl())
+                                .load(event.pictureUrl)
                                 .centerCrop()
                                 .into(mDetailEventImage);
-                        if (event.getLat() != null && event.getLng() != null)
-                            mDestLatLng = new LatLng(event.getLat(), event.getLng());
+                        if (event.lat != null && event.lng != null)
+                            mDestLatLng = new LatLng(event.lat, event.lng);
                         else
                             mDestLatLng = null;
-                        // Count down the latch
-                        if (Looper.myLooper() == Looper.getMainLooper()) {
-                            Log.d(TAG, "getEvent accept callback on main thread");
-                        } else {
-                            Log.d(TAG, "getEvent accept callback not on main thread");
-                        }
                         mEventGotten = true;
                         tryToGetEstimatedTime();
                         tryToSetupMapUi();
@@ -411,7 +394,8 @@ public class EventDetailActivity extends AppCompatActivity
     }
 
     private void tryToGetEstimatedTime() {
-        Log.d(TAG, "tryToGetEstimatedTime: " + ((mEventGotten && mGoogleApiConnected && mMapLoaded) ? "Can" : "Cannot"));
+        Log.d(TAG, "tryToGetEstimatedTime: " +
+                ((mEventGotten && mGoogleApiConnected && mMapLoaded) ? "Can" : "Cannot"));
         if (mEventGotten && mGoogleApiConnected && mMapLoaded)
             getEstimatedTime();
     }
@@ -436,12 +420,6 @@ public class EventDetailActivity extends AppCompatActivity
                         final DistanceMatrixElement element = rows[0].elements[0];
                         final Duration duration = element.duration;
                         final Duration durationInTraffic = element.durationInTraffic;
-                        if (Looper.myLooper() == Looper.getMainLooper()) {
-                            Toast.makeText(
-                                    EventDetailActivity.this,
-                                    "estimated time on main thread",
-                                    Toast.LENGTH_SHORT).show();
-                        }
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {

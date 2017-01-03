@@ -1,8 +1,5 @@
-package com.example.zpiao1.excited.views;
+package com.example.zpiao1.excited.data;
 
-/**
- * Created by zpiao on 9/15/2016.
- */
 public class CategoryIcon {
     private String mTag;
     private int mImageId;
