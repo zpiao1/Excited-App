@@ -6,6 +6,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
@@ -29,17 +30,12 @@ import com.example.zpiao1.excited.server.IEventRequest;
 import com.example.zpiao1.excited.server.ServerUtils;
 import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
-import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -124,6 +120,7 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.action_login) {
             // Start the LoginActivity
             startActivity(new Intent(this, LoginActivity.class));
+            return true;
         }
 
         return super.onOptionsItemSelected(item);
@@ -190,12 +187,12 @@ public class MainActivity extends AppCompatActivity
             scale = 1;
         if (dy > 10) {
             iconImage = (ImageView) findViewById(R.id.garbage_image);
-            color = getResources().getColor(R.color.lightRed);
+            color = ContextCompat.getColor(this, R.color.lightRed);
             defaultHeight = mGarbageIconDefaultHeight;
             changeIconGraduallyHelper(iconImage, color, defaultHeight, scale);
         } else if (dy < -10) {
             iconImage = (ImageView) findViewById(R.id.star_image);
-            color = getResources().getColor(R.color.lightGreen);
+            color = ContextCompat.getColor(this, R.color.lightGreen);
             defaultHeight = mStarIconDefaultHeight;
             changeIconGraduallyHelper(iconImage, color, defaultHeight, scale);
         }
@@ -228,7 +225,7 @@ public class MainActivity extends AppCompatActivity
         params.height = defaultHeight;
         iconImage.setLayoutParams(params);
 
-        iconImage.setBackgroundColor(getResources().getColor(android.R.color.transparent));
+        iconImage.setBackgroundColor(ContextCompat.getColor(this, android.R.color.transparent));
     }
 
     public void onImageRemoved(Uri uri) {
@@ -249,28 +246,24 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void fetchEvents() {
-        IEventRequest request = new Retrofit.Builder()
-                .baseUrl(ServerUtils.BASE_URL)
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
+        IEventRequest request = ServerUtils.getRetrofit()
                 .create(IEventRequest.class);
-        mDisposable.add(request.getEvents(buildEventSelection())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new Consumer<List<SimpleEvent>>() {
+        ServerUtils.addToDisposable(mDisposable,
+                request.getEvents(buildEventSelection()),
+                new Consumer<List<SimpleEvent>>() {
                     @Override
                     public void accept(List<SimpleEvent> events) throws Exception {
                         mPagerAdapter = new EventImagePagerAdapter(getSupportFragmentManager(),
                                 events);
                         mViewPager.setAdapter(mPagerAdapter);
                     }
-                }, new Consumer<Throwable>() {
+                },
+                new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
                         Log.e(TAG, "fetchEvents", throwable);
                     }
-                }));
+                });
     }
 
     @Override
@@ -284,6 +277,6 @@ public class MainActivity extends AppCompatActivity
         for (int i = 0; i < mCategoryCheckedStates.length; ++i)
             if (mCategoryCheckedStates[i])
                 selected.add(CATEGORIES[i]);
-        return TextUtils.join("|", selected);
+        return selected.isEmpty() ? "none" : TextUtils.join("|", selected);
     }
 }

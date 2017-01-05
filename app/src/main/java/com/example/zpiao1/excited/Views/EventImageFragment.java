@@ -82,7 +82,4 @@ public class EventImageFragment extends Fragment {
         });
     }
 
-//    private Uri getUriOfImage() {
-//        return ContentUris.withAppendedId(EventEntry.CONTENT_URI, mId);
-//    }
 }

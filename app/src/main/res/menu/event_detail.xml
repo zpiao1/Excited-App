@@ -8,19 +8,17 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_schedule"
-        android:icon="@drawable/ic_star"
+        android:id="@+id/action_likes"
         android:orderInCategory="10"
         android:title="@string/action_schedule"
-        app:actionLayout="@layout/action_icon_text"
-        app:showAsAction="ifRoom" />
+        app:actionLayout="@layout/menu_action_item_badge"
+        app:showAsAction="always" />
 
     <item
-        android:id="@+id/action_removed"
-        android:icon="@drawable/ic_garbage"
+        android:id="@+id/action_dislikes"
         android:orderInCategory="20"
         android:title="@string/action_removed"
-        app:actionLayout="@layout/action_icon_text"
-        app:showAsAction="ifRoom" />
+        app:actionLayout="@layout/menu_action_item_badge"
+        app:showAsAction="always" />
 
 </menu>

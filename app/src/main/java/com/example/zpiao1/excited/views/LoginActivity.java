@@ -22,6 +22,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.server.IUserRequest;
@@ -34,30 +35,29 @@ import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
-import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.auth.api.signin.GoogleSignInResult;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.List;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 import static android.Manifest.permission.READ_CONTACTS;
 
-/**
- * A login screen that offers login via email/password.
- */
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends AppCompatActivity implements GoogleApiClient.OnConnectionFailedListener {
 
-    /**
-     * Id to identity READ_CONTACTS permission request.
-     */
     private static final int REQUEST_READ_CONTACTS = 0;
 
     private static final String TAG = LoginActivity.class.getSimpleName();
+
+    // Request Code for Google Sign In
+    private static final int RC_SIGN_IN = 1;
 
     // UI references.
     private AutoCompleteTextView mEmailView;
@@ -66,12 +66,19 @@ public class LoginActivity extends AppCompatActivity {
     private View mLoginFormView;
 
     private CallbackManager mCallbackManager;
+    private GoogleApiClient mGoogleApiClient;
 
     private CompositeDisposable mDisposable;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        // Result returned from launching the Intent from GoogleSignInApi.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
+            handleSignInResult(result);
+        }
         mCallbackManager.onActivityResult(requestCode, resultCode, data);
     }
 
@@ -80,8 +87,19 @@ public class LoginActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         mDisposable = new CompositeDisposable();
+        // For Facebook
         FacebookSdk.sdkInitialize(getApplicationContext());
         mCallbackManager = CallbackManager.Factory.create();
+        // For Google
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .requestProfile()
+                .requestIdToken(getString(R.string.web_client_id))
+                .build();
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this, this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
 
         setContentView(R.layout.activity_login);
         setupActionBar();
@@ -108,26 +126,8 @@ public class LoginActivity extends AppCompatActivity {
         mLoginFormView = findViewById(R.id.login_form);
         mProgressView = findViewById(R.id.login_progress);
 
-        // Handle Facebook Login
-        LoginButton facebookLoginButton = (LoginButton) findViewById(R.id.facebook_login_button);
-        facebookLoginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
-            @Override
-            public void onSuccess(LoginResult loginResult) {
-                AccessToken token = loginResult.getAccessToken();
-                loginToFacebook(token.getToken());
-            }
-
-            @Override
-            public void onCancel() {
-
-            }
-
-            @Override
-            public void onError(FacebookException error) {
-
-            }
-        });
-
+        setupGoogleSignIn();
+        setupFacebookLogin();
     }
 
     private void populateAutoComplete() {
@@ -184,16 +184,6 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    private boolean isEmailValid(String email) {
-        //TODO: Replace this with your own logic
-        return email.contains("@");
-    }
-
-    private boolean isPasswordValid(String password) {
-        //TODO: Replace this with your own logic
-        return password.length() > 4;
-    }
-
     /**
      * Shows the progress UI and hides the login form.
      */
@@ -239,42 +229,119 @@ public class LoginActivity extends AppCompatActivity {
         mEmailView.setAdapter(adapter);
     }
 
+    private void signInToGoogle(String idToken) {
+        IUserRequest request = ServerUtils.getRetrofit()
+                .create(IUserRequest.class);
+        ServerUtils.addToDisposable(mDisposable,
+                request.googleSignIn(idToken),
+                new Consumer<LoginResponse>() {
+                    @Override
+                    public void accept(LoginResponse loginResponse) throws Exception {
+                        handleLoginResponse(loginResponse);
+                    }
+                },
+                new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.e(TAG, "signInToGoogle", throwable);
+                    }
+                });
+    }
 
     private void loginToFacebook(String accessToken) {
-        IUserRequest request = new Retrofit.Builder()
-                .baseUrl(ServerUtils.BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .build()
+        final IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
-        mDisposable.add(request.facebookLogin(accessToken)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Consumer<LoginResponse>() {
+        ServerUtils.addToDisposable(mDisposable,
+                request.facebookLogin(accessToken),
+                new Consumer<LoginResponse>() {
                     @Override
                     public void accept(LoginResponse response) throws Exception {
-                        // save the token to SharedPreferences to be used later
-                        if (response.success) {
-                            Log.d(TAG, "token: " + response.token);
-                            SharedPreferences prefs = getSharedPreferences(
-                                    getString(R.string.pref_token_key), Context.MODE_PRIVATE);
-                            SharedPreferences.Editor editor = prefs.edit();
-                            editor.putString("token", response.token);
-                            editor.apply();
-                        }
+                        // save the token and user id to SharedPreferences to be used later
+                        handleLoginResponse(response);
                     }
                 }, new Consumer<Throwable>() {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
                         Log.e(TAG, "loginToFacebook", throwable);
                     }
-                }));
+                });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mDisposable.clear();
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Log.e(TAG, connectionResult.getErrorMessage());
+    }
+
+    void setupGoogleSignIn() {
+        SignInButton signInButton = (SignInButton) findViewById(R.id.google_sign_in_button);
+        signInButton.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent signInIntent = Auth.GoogleSignInApi.getSignInIntent(mGoogleApiClient);
+                startActivityForResult(signInIntent, RC_SIGN_IN);
+            }
+        });
+    }
+
+    void setupFacebookLogin() {
+        LoginButton facebookLoginButton = (LoginButton) findViewById(R.id.facebook_login_button);
+        facebookLoginButton.registerCallback(mCallbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                AccessToken token = loginResult.getAccessToken();
+                loginToFacebook(token.getToken());
+            }
+
+            @Override
+            public void onCancel() {
+                Log.d(TAG, "FacebookCallback Login cancelled");
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                Log.e(TAG, "FacebookLoginCallback", error);
+            }
+        });
+    }
+
+    private void handleSignInResult(GoogleSignInResult result) {
+        Log.d(TAG, "handleSignInResult:" + result.isSuccess());
+        if (result.isSuccess()) {
+            GoogleSignInAccount acct = result.getSignInAccount();
+//            Toast.makeText(this, "Signed in with Google: " + acct.getDisplayName(), Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "Google ID token: " + acct.getIdToken());
+            Log.d(TAG, "Email: " + acct.getEmail());
+            Log.d(TAG, "Photo Url: " + acct.getPhotoUrl());
+            // Authenticate the user to the backend server
+            signInToGoogle(acct.getIdToken());
+        } else {
+            Toast.makeText(this, "Signed out with Google", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void handleLoginResponse(LoginResponse response) {
+        if (response.success) {
+            Log.d(TAG, "loginResponse: " + response.status);
+            Log.d(TAG, "token: " + response.token);
+            Log.d(TAG, "id: " + response.id);
+            SharedPreferences prefs = getSharedPreferences(
+                    getString(R.string.shared_pref_name_server), Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString(getString(R.string.pref_token_key), response.token);
+            editor.putString(getString(R.string.pref_id_key), response.id);
+            editor.apply();
+            Toast.makeText(LoginActivity.this,
+                    "Login Successfully!",
+                    Toast.LENGTH_SHORT)
+                    .show();
+            finish();
+        }
     }
 }
 

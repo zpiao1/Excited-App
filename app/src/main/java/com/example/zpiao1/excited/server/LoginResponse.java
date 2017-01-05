@@ -14,4 +14,7 @@ public class LoginResponse {
     @SerializedName("token")
     @Expose
     public String token;
+    @SerializedName("id")
+    @Expose
+    public String id;
 }

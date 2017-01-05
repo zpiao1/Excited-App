@@ -12,12 +12,12 @@ import retrofit2.http.Query;
 
 public interface IEventRequest {
 
-    @GET("api/events/")
+    @GET("events/")
     Observable<List<SimpleEvent>> getEvents(@Query("categories") String categories);
 
-    @GET("api/events/count/")
+    @GET("events/count/")
     Observable<Integer> getCount();
 
-    @GET("api/events/{eventId}/")
+    @GET("events/{eventId}/")
     Observable<Event> getEvent(@Path("eventId") String eventId);
 }

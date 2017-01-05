@@ -11,7 +11,7 @@ import java.util.List;
 
 public class EventImagePagerAdapter extends FragmentStatePagerAdapter {
 
-    private static final String LOG_TAG = EventImagePagerAdapter.class.getSimpleName();
+    private static final String TAG = EventImagePagerAdapter.class.getSimpleName();
     private List<SimpleEvent> mSimpleEvents;
 
 

@@ -22,15 +22,12 @@ import com.example.zpiao1.excited.views.MainActivity;
 
 import java.util.List;
 
-/**
- * Created by zpiao on 9/15/2016.
- */
 public class IconAdapter extends ArrayAdapter<CategoryIcon> {
-    private static final int[] STATE_CHECKED_FALSE = new int[]{-android.R.attr.state_checked};
-    private static final int[] STATE_CHECKED_TRUE = new int[]{android.R.attr.state_checked};
-    private static final int[] STATE_PRESSED_TRUE = new int[]{android.R.attr.state_pressed};
-    private static final int[] STATE_FOCUSED_TRUE = new int[]{android.R.attr.state_focused};
-    private static final int[] STATE_ACTIVATED_TRUE = new int[]{android.R.attr.state_activated};
+    private static final int[] STATE_CHECKED_FALSE = {-android.R.attr.state_checked};
+    private static final int[] STATE_CHECKED_TRUE = {android.R.attr.state_checked};
+    private static final int[] STATE_PRESSED_TRUE = {android.R.attr.state_pressed};
+    private static final int[] STATE_FOCUSED_TRUE = {android.R.attr.state_focused};
+    private static final int[] STATE_ACTIVATED_TRUE = {android.R.attr.state_activated};
     private Drawable mPressedDrawable;
 
     public IconAdapter(Context context, List<CategoryIcon> objects) {

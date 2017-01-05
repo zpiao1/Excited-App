@@ -1,7 +1,10 @@
 package com.example.zpiao1.excited.views;
 
 import android.Manifest;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -17,6 +20,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -26,9 +30,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.example.zpiao1.excited.BuildConfig;
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.Event;
 import com.example.zpiao1.excited.server.IEventRequest;
+import com.example.zpiao1.excited.server.IUserRequest;
+import com.example.zpiao1.excited.server.LikesOrDislikesResponse;
 import com.example.zpiao1.excited.server.ServerUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -49,16 +56,14 @@ import com.google.maps.model.DistanceMatrixRow;
 import com.google.maps.model.Duration;
 import com.google.maps.model.LatLng;
 import com.google.maps.model.TravelMode;
-import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
+import com.mikepenz.actionitembadge.library.ActionItemBadge;
+import com.mikepenz.google_material_typeface_library.GoogleMaterial;
+import com.mikepenz.iconics.IconicsDrawable;
 
 import org.joda.time.DateTime;
 
-import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
-import io.reactivex.schedulers.Schedulers;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class EventDetailActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, OnMapReadyCallback,
@@ -84,8 +89,8 @@ public class EventDetailActivity extends AppCompatActivity
     private TextView mDetailTransitTime;
     private CollapsingToolbarLayout mCollapsingToolbar;
 
-    private TextView mRemovedCountView;
-    private TextView mStarredCountView;
+    private TextView mDislikesView;
+    private TextView mLikesView;
 
     private CompositeDisposable mDisposable;
 
@@ -143,7 +148,6 @@ public class EventDetailActivity extends AppCompatActivity
         mDisposable = new CompositeDisposable();
         getEvent();
 
-
         getEstimatedTime();
     }
 
@@ -161,21 +165,38 @@ public class EventDetailActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.event_detail, menu);
+        ActionItemBadge.update(this,
+                menu.findItem(R.id.action_likes),
+                new IconicsDrawable(this)
+                        .icon(GoogleMaterial.Icon.gmd_star)
+                        .sizeDp(24)
+                        .color(Color.WHITE),
+                ActionItemBadge.BadgeStyles.RED.getStyle(),
+                Integer.MIN_VALUE,  // hide the badge
+                new ActionItemBadge.ActionItemBadgeListener() {
+                    @Override
+                    public boolean onOptionsItemSelected(MenuItem menu) {
+                        Log.d(TAG, "likes selected");
+                        getLikes();
+                        return true;
+                    }
+                });
+        ActionItemBadge.update(this,
+                menu.findItem(R.id.action_dislikes),
+                new IconicsDrawable(this)
+                        .icon(GoogleMaterial.Icon.gmd_delete)
+                        .color(Color.WHITE)
+                        .sizeDp(24),
+                ActionItemBadge.BadgeStyles.RED.getStyle(),
+                Integer.MIN_VALUE,  // hide the badge
+                new ActionItemBadge.ActionItemBadgeListener() {
+                    @Override
+                    public boolean onOptionsItemSelected(MenuItem menu) {
+                        Log.d(TAG, "dislikes selected");
+                        return true;
+                    }
+                });
 
-        View removedActionView = menu.findItem(R.id.action_removed).getActionView();
-        ((ImageView) removedActionView.findViewById(R.id.action_icon)).setImageResource(
-                R.drawable.ic_garbage);
-        mRemovedCountView = (TextView) removedActionView.findViewById(R.id.count_text);
-
-        View scheduleActionView = menu.findItem(R.id.action_schedule).getActionView();
-        ((ImageView) scheduleActionView.findViewById(R.id.action_icon)).setImageResource(
-                R.drawable.ic_star);
-        mStarredCountView = (TextView) scheduleActionView.findViewById(R.id.count_text);
-
-//        updateActionIconCount(mStarredCountView, COUNT_STARRED_SELECTION,
-//                COUNT_STARRED_SELECTION_ARGS);
-//        updateActionIconCount(mRemovedCountView, COUNT_REMOVED_SELECTION,
-//                COUNT_REMOVED_SELECTION_ARGS);
         return true;
     }
 
@@ -184,14 +205,13 @@ public class EventDetailActivity extends AppCompatActivity
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (item.getItemId()) {
+            case R.id.action_settings:
+                Log.d(TAG, "action_settings selected");
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-
-        return super.onOptionsItemSelected(item);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -308,7 +328,9 @@ public class EventDetailActivity extends AppCompatActivity
     public synchronized void onConnected(@Nullable Bundle bundle) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
                 PackageManager.PERMISSION_GRANTED) {
-            Location lastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            Location lastLocation = LocationServices
+                    .FusedLocationApi
+                    .getLastLocation(mGoogleApiClient);
             if (lastLocation != null) {
                 mCurLatLng = new
                         LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
@@ -317,8 +339,12 @@ public class EventDetailActivity extends AppCompatActivity
                 tryToGetEstimatedTime();
                 tryToSetupMapUi();
             } else {
-                Toast.makeText(this, "No location detected. Use fake location instead", Toast.LENGTH_LONG).show();
-                mCurLatLng = new LatLng(1.350436, 103.685065);
+                if (BuildConfig.DEBUG) {
+                    Toast.makeText(this,
+                            "No location detected. Use fake location instead",
+                            Toast.LENGTH_LONG).show();
+                    mCurLatLng = new LatLng(1.350436, 103.685065);
+                }
                 mGoogleApiConnected = true;
                 tryToGetEstimatedTime();
                 tryToSetupMapUi();
@@ -356,16 +382,11 @@ public class EventDetailActivity extends AppCompatActivity
 
     private void getEvent() {
         String id = getIntent().getStringExtra("_id");
-        IEventRequest request = new Retrofit.Builder()
-                .baseUrl(ServerUtils.BASE_URL)
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .addConverterFactory(GsonConverterFactory.create())
-                .build()
+        IEventRequest request = ServerUtils.getRetrofit()
                 .create(IEventRequest.class);
-        mDisposable.add(request.getEvent(id)
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribeOn(Schedulers.io())
-                .subscribe(new Consumer<Event>() {
+        ServerUtils.addToDisposable(mDisposable,
+                request.getEvent(id),
+                new Consumer<Event>() {
                     @Override
                     public synchronized void accept(Event event) throws Exception {
                         // Set up the UI
@@ -390,7 +411,7 @@ public class EventDetailActivity extends AppCompatActivity
                     public void accept(Throwable throwable) throws Exception {
                         Log.e(TAG, "getEvent()", throwable);
                     }
-                }));
+                });
     }
 
     private void tryToGetEstimatedTime() {
@@ -477,5 +498,33 @@ public class EventDetailActivity extends AppCompatActivity
                                        String[] selectionArgs) {
     }
 
-
+    private void getLikes() {
+        Log.d(TAG, "getLikes");
+        SharedPreferences prefs = getSharedPreferences(getString(R.string.shared_pref_name_server),
+                Context.MODE_PRIVATE);
+        // Look up the token and id
+        String token = prefs.getString(getString(R.string.pref_token_key), null);
+        String id = prefs.getString(getString(R.string.pref_id_key), null);
+        if (token == null || id == null) {
+            Toast.makeText(this, "You must login first!", Toast.LENGTH_SHORT).show();
+        } else {
+            IUserRequest request = ServerUtils.getRetrofit()
+                    .create(IUserRequest.class);
+            ServerUtils.addToDisposable(mDisposable,
+                    request.getLikes(id, token),
+                    new Consumer<LikesOrDislikesResponse>() {
+                        @Override
+                        public void accept(LikesOrDislikesResponse likesOrDislikesResponse) throws Exception {
+                            String response = TextUtils.join(" ", likesOrDislikesResponse.events);
+                            Log.d(TAG, response);
+                        }
+                    },
+                    new Consumer<Throwable>() {
+                        @Override
+                        public void accept(Throwable throwable) throws Exception {
+                            Log.e(TAG, "getLikes", throwable);
+                        }
+                    });
+        }
+    }
 }
