@@ -18,7 +18,6 @@ import android.widget.ToggleButton;
 
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.CategoryIcon;
-import com.example.zpiao1.excited.views.MainActivity;
 
 import java.util.List;
 
@@ -29,9 +28,13 @@ public class IconAdapter extends ArrayAdapter<CategoryIcon> {
     private static final int[] STATE_FOCUSED_TRUE = {android.R.attr.state_focused};
     private static final int[] STATE_ACTIVATED_TRUE = {android.R.attr.state_activated};
     private Drawable mPressedDrawable;
+    private OnCategoryCheckedChangeListener mListener;
 
-    public IconAdapter(Context context, List<CategoryIcon> objects) {
+    public IconAdapter(Context context,
+                       List<CategoryIcon> objects,
+                       OnCategoryCheckedChangeListener listener) {
         super(context, 0, objects);
+        mListener = listener;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP)
             mPressedDrawable = new RippleDrawable(
                     ColorStateList.valueOf(ContextCompat.getColor(context,
@@ -70,7 +73,7 @@ public class IconAdapter extends ArrayAdapter<CategoryIcon> {
         button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                ((MainActivity) getContext()).onCategoryCheckedChanged(position, b);
+                mListener.onCategoryCheckedChanged(position, b);
             }
         });
 
@@ -78,5 +81,9 @@ public class IconAdapter extends ArrayAdapter<CategoryIcon> {
         iconTag.setText(categoryIcon.getTag());
 
         return categoryItem;
+    }
+
+    public interface OnCategoryCheckedChangeListener {
+        void onCategoryCheckedChanged(int position, boolean isChecked);
     }
 }

@@ -12,13 +12,16 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ServerUtils {
     public static final String BASE_URL = "http://54.169.173.170:3000/api/";
+    private static Retrofit RETROFIT = null;
 
-    public static Retrofit getRetrofit() {
-        return new Retrofit.Builder()
-                .baseUrl(BASE_URL)
-                .addConverterFactory(GsonConverterFactory.create())
-                .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-                .build();
+    public static Retrofit getRetrofit() {  // Singleton
+        if (RETROFIT == null)
+            RETROFIT = new Retrofit.Builder()
+                    .baseUrl(BASE_URL)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
+                    .build();
+        return RETROFIT;
     }
 
     public static <T> void addToDisposable(CompositeDisposable disposable,

@@ -1,23 +1,21 @@
 package com.example.zpiao1.excited.logic;
 
-import android.app.Activity;
+import android.content.Context;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
-
-import com.example.zpiao1.excited.views.MainActivity;
 
 public abstract class OnSwipeListener implements View.OnTouchListener {
     private static final String LOG_TAG = OnSwipeListener.class.getSimpleName();
     private float mLastViewY;
     private float mLastTouchY;
     private float mStartTouchY;
-    private MainActivity mMainActivity;
     private GestureDetector mGestureDetector;
+    private OnTouchActionListener mListener;
 
-    public OnSwipeListener(Activity activity) {
-        mMainActivity = (MainActivity) activity;
-        mGestureDetector = new GestureDetector(activity, new SwipeGestureListener());
+    public OnSwipeListener(Context context, OnTouchActionListener listener) {
+        mGestureDetector = new GestureDetector(context, new SwipeGestureListener());
+        mListener = listener;
     }
 
     @Override
@@ -28,6 +26,7 @@ public abstract class OnSwipeListener implements View.OnTouchListener {
             case MotionEvent.ACTION_DOWN:
                 mLastViewY = view.getY();
                 mStartTouchY = mLastTouchY = motionEvent.getY();
+                mListener.onActionDown();
                 return true;
             case MotionEvent.ACTION_MOVE: {
                 float touchY = motionEvent.getY();
@@ -36,12 +35,12 @@ public abstract class OnSwipeListener implements View.OnTouchListener {
                 view.setY(mLastViewY);
                 mLastTouchY = touchY;
                 // Change the star/garbage background color
-                mMainActivity.changeIconGradually(mStartTouchY, touchY);
+                mListener.onActionMove(-1.0f, -1.0f, mStartTouchY, touchY);
                 return true;
             }
             case MotionEvent.ACTION_UP: {
                 view.setY(0);
-                mMainActivity.resetIcons();
+                mListener.onActionUp();
                 return true;
             }
             default:
@@ -81,4 +80,5 @@ public abstract class OnSwipeListener implements View.OnTouchListener {
             return true;
         }
     }
+
 }

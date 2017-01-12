@@ -19,9 +19,13 @@
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
-    <string name="prompt_password">Password (optional)</string>
-    <string name="action_sign_in">Sign in or register</string>
+    <string name="prompt_password">Password</string>
+    <string name="prompt_confirm_password">Confirm Password</string>
+    <string name="prompt_name">Name</string>
+    <string name="action_sign_in">Sign in</string>
     <string name="action_sign_in_short">Sign in</string>
+    <string name="action_register">Register</string>
+    <string name="action_create_new_account">Create New Account</string>
     <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_invalid_password">This password is too short</string>
     <string name="error_incorrect_password">This password is incorrect</string>
@@ -29,11 +33,15 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
+    <string name="password_visibility">Show Password</string>
 
     <string name="shared_pref_name_server">server</string>
     <string name="pref_token_key">token</string>
     <string name="pref_id_key">id</string>
 
+    <string name="prompt_verify_email">Verify your email now?</string>
+    <string name="verify_email_message">Congratulations! You have registered with Excited! You may
+        proceed to verify your email address now.</string>
 
     <string name="loren_ipsum">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vivamus facilisis rutrum odio, vitae congue nulla rutrum non. Etiam sollicitudin diam id ipsum convallis, sit amet pulvinar nibh vestibulum. Morbi convallis accumsan finibus. Aenean facilisis quis neque at dignissim. Nullam at elit dui. Maecenas non ante cursus, eleifend odio quis, accumsan mauris. Phasellus at condimentum nisi, quis interdum elit. Proin consequat mattis risus eu viverra. Praesent est lorem, mollis quis neque et, euismod vestibulum dui. Cras volutpat interdum risus, in porta nisi euismod eget. Integer at convallis lorem, id mattis nunc. Quisque laoreet erat sit amet ligula gravida, ut cursus nisl tincidunt. Donec porta, lectus in vehicula interdum, ipsum orci laoreet metus, non iaculis urna felis sit amet libero. Nullam nibh diam, lobortis vel sem nec, sodales gravida magna. Pellentesque sit amet sem laoreet, finibus nisi vel, malesuada ipsum.
 
@@ -44,4 +52,8 @@ Integer condimentum nibh risus, sit amet placerat urna luctus eget. Sed quis sem
 Aenean quis diam maximus, porttitor massa ac, aliquam tortor. Donec placerat pretium ex, sed porttitor ex vulputate eu. Praesent et libero aliquet, tincidunt enim et, blandit dolor. Phasellus congue consectetur finibus. Aliquam erat volutpat. Vestibulum vitae risus eros. Ut vulputate dolor id pellentesque auctor. Morbi dictum, tellus vel rutrum aliquet, dui purus ullamcorper quam, eget rhoncus dolor nisi et elit. Sed ac orci arcu. Duis iaculis luctus hendrerit. Maecenas quis diam at diam mattis fringilla vitae non mauris. Nulla ut commodo ligula, bibendum dapibus quam. Morbi lobortis risus nulla, eget viverra nulla consectetur in. Fusce molestie faucibus suscipit. Integer tempor venenatis hendrerit. In varius ante quam, et dapibus risus porttitor vel.
 
 Mauris eget fringilla orci. Maecenas luctus eros ullamcorper enim elementum, eleifend lacinia nisl suscipit. Pellentesque faucibus lorem dapibus, vestibulum neque vitae, volutpat tellus. Quisque cursus venenatis dolor non ullamcorper. Aliquam fermentum, risus at suscipit condimentum, mi est rhoncus urna, ut dapibus quam risus at purus. Pellentesque egestas ornare nibh eu condimentum. Maecenas at quam laoreet, euismod lorem quis, interdum odio. Nam suscipit vestibulum velit, vitae pellentesque purus imperdiet at. Phasellus ac blandit dui. Cras sollicitudin auctor nunc a egestas. Sed cursus in ex luctus accumsan. Phasellus nec mauris ac elit euismod vehicula. Donec quam augue, imperdiet vel augue a, volutpat pharetra libero. Sed sodales velit felis, eget tincidunt nisi eleifend et.</string>
+    <string name="title_activity_register">RegisterActivity</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

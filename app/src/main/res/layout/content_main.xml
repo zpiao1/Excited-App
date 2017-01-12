@@ -12,7 +12,7 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".views.MainActivity"
-    tools:showIn="@layout/app_bar_main">
+    tools:showIn="@layout/fragment_main">
 
     <GridView
         android:id="@+id/icon_container"

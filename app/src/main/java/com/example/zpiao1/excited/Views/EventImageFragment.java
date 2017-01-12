@@ -1,6 +1,5 @@
 package com.example.zpiao1.excited.views;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -14,20 +13,23 @@ import com.bumptech.glide.Glide;
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.SimpleEvent;
 import com.example.zpiao1.excited.logic.OnSwipeListener;
+import com.example.zpiao1.excited.logic.OnTouchActionListener;
 
 public class EventImageFragment extends Fragment {
 
     private static final String LOG_TAG = EventImageFragment.class.getSimpleName();
     private View mRootView;
     private SimpleEvent mSimpleEvent;
+    private OnTouchActionListener mListener;
 
     public EventImageFragment() {
     }
 
 
-    public static EventImageFragment getInstance(SimpleEvent simpleEvent) {
+    public static EventImageFragment getInstance(SimpleEvent simpleEvent, OnTouchActionListener listener) {
         EventImageFragment fragment = new EventImageFragment();
         fragment.mSimpleEvent = simpleEvent;
+        fragment.mListener = listener;
         return fragment;
     }
 
@@ -58,7 +60,7 @@ public class EventImageFragment extends Fragment {
     }
 
     private void setRootViewSwipeListener() {
-        mRootView.setOnTouchListener(new OnSwipeListener(getActivity()) {
+        mRootView.setOnTouchListener(new OnSwipeListener(getActivity(), mListener) {
             @Override
             public void onSwipeDown() {
                 // Get the Uri for this fragment, and let MainActivity handle the removal
@@ -73,11 +75,13 @@ public class EventImageFragment extends Fragment {
 
             @Override
             public void onClick() {
-                // Start a EventDetailActivity with the data in the Uri
-                Intent intent = new Intent(getActivity(), EventDetailActivity.class);
-                intent.putExtra("_id", mSimpleEvent.id);
-//                intent.setData(getUriOfImage());
-                startActivity(intent);
+                getActivity().getSupportFragmentManager().beginTransaction()
+                        .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out,
+                                android.R.anim.fade_in, android.R.anim.fade_out)
+                        .replace(R.id.fragment_container,
+                                EventDetailFragment.newInstance(mSimpleEvent.id))
+                        .addToBackStack(null)
+                        .commit();
             }
         });
     }
