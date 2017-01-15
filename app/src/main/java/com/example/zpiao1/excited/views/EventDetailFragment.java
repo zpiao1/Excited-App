@@ -84,7 +84,7 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
     private GoogleMap mGoogleMap = null;
     private LatLng mCurLatLng;
     private LatLng mDestLatLng;
-    private GeoApiContext mContext;
+    private GeoApiContext mGeoApiContext;
 
     private View mRootView;
     private ImageView mDetailEventImage;
@@ -128,7 +128,7 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
         super.onCreate(savedInstanceState);
 
         setHasOptionsMenu(true);
-        mContext = new GeoApiContext()
+        mGeoApiContext = new GeoApiContext()
                 .setApiKey(getString(R.string.google_maps_service_api_key));
 
         // Setup Google API client
@@ -355,6 +355,8 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
             if (grantResults.length > 0 &&
                     grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 mGoogleApiClient.connect();
+                tryToGetEstimatedTime();
+                tryToSetupMapUi();
                 Toast.makeText(getContext(),
                         "onRequestPermissionResult(): Permission granted!",
                         Toast.LENGTH_SHORT).show();
@@ -412,7 +414,7 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
     }
 
     private void requestEstimatedTime(final TravelMode mode) {
-        DistanceMatrixApi.newRequest(mContext)
+        DistanceMatrixApi.newRequest(mGeoApiContext)
                 .origins(mCurLatLng)
                 .destinations(mDestLatLng)
                 .mode(mode)

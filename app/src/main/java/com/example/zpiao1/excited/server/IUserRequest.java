@@ -1,5 +1,7 @@
 package com.example.zpiao1.excited.server;
 
+import com.example.zpiao1.excited.data.User;
+
 import java.util.HashMap;
 
 import io.reactivex.Observable;
@@ -23,6 +25,12 @@ public interface IUserRequest {
     Observable<RegisterResponse> register(@Body HashMap<String, Object> body);
 
     @GET("users/{id}")
-    Observable<UserResponse> getUser(@Path("id") String id, @Query("token") String token);
+    Observable<User> getUser(@Path("id") String id, @Query("token") String token);
+
+    @GET("users/logout")
+    Observable<LogoutResponse> logOut();
+
+    @POST("users/login")
+    Observable<LoginResponse> emailLogin(@Body HashMap<String, Object> body);
 
 }

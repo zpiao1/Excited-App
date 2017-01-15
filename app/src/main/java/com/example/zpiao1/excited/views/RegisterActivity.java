@@ -9,7 +9,6 @@ import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -20,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.zpiao1.excited.R;
+import com.example.zpiao1.excited.logic.AccountUtils;
 import com.example.zpiao1.excited.server.HttpError;
 import com.example.zpiao1.excited.server.HttpErrorUtils;
 import com.example.zpiao1.excited.server.IUserRequest;
@@ -77,8 +77,7 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onFocusChange(View view, boolean hasFocus) {
                 if (!hasFocus) {    // when it loses focus
-                    String email = mEmailText.getText().toString();
-                    checkEmail(email);
+                    AccountUtils.checkEmail(mEmailText, mEmailInput);
                 }
             }
         });
@@ -87,8 +86,7 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
                 if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    String email = mEmailText.getText().toString();
-                    checkEmail(email);
+                    AccountUtils.checkEmail(mEmailText, mEmailInput);
                     return mEmailInput.getError() == null;
                 }
                 return false;
@@ -98,8 +96,7 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onFocusChange(View view, boolean hasFocus) {
                 if (!hasFocus) {
-                    String password = mPasswordText.getText().toString();
-                    checkPassword(password);
+                    AccountUtils.checkPassword(mPasswordText, mPasswordInput);
                 }
             }
         });
@@ -108,8 +105,7 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
                 if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    String password = mPasswordText.getText().toString();
-                    checkPassword(password);
+                    AccountUtils.checkPassword(mPasswordText, mPasswordInput);
                     return mPasswordInput.getError() == null;
                 }
                 return false;
@@ -119,9 +115,9 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onFocusChange(View view, boolean hasFocus) {
                 if (!hasFocus) {
-                    String password = mPasswordText.getText().toString();
-                    String confirmPassword = mConfirmPasswordText.getText().toString();
-                    checkConfirmPasswordAgainstPassword(confirmPassword, password);
+                    AccountUtils.checkConfirmPasswordAgainstPassword(mConfirmPasswordText,
+                            mConfirmPasswordInput,
+                            mPasswordText);
                 }
             }
         });
@@ -129,9 +125,9 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
                 if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    String password = mPasswordText.getText().toString();
-                    String confirmPassword = mConfirmPasswordText.getText().toString();
-                    checkConfirmPasswordAgainstPassword(confirmPassword, password);
+                    AccountUtils.checkConfirmPasswordAgainstPassword(mConfirmPasswordText,
+                            mConfirmPasswordInput,
+                            mPasswordText);
                     return mConfirmPasswordInput.getError() == null;
                 }
                 return false;
@@ -141,12 +137,11 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 // Check the input fields
-                String email = mEmailText.getText().toString();
-                String password = mPasswordText.getText().toString();
-                String confirmPassword = mConfirmPasswordText.getText().toString();
-                checkEmail(email);
-                checkPassword(password);
-                checkConfirmPasswordAgainstPassword(confirmPassword, password);
+                AccountUtils.checkEmail(mEmailText, mEmailInput);
+                AccountUtils.checkPassword(mPasswordText, mPasswordInput);
+                AccountUtils.checkConfirmPasswordAgainstPassword(mConfirmPasswordText,
+                        mConfirmPasswordInput,
+                        mPasswordText);
                 if (mEmailInput.getError() != null
                         || mPasswordInput.getError() != null
                         || mConfirmPasswordInput.getError() != null) {
@@ -240,63 +235,6 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         mDisposable.clear();
-    }
-
-    private void checkEmail(String email) {
-        if (TextUtils.isEmpty(email)) {
-            mEmailInput.setError("Email is required");
-            return;
-        }
-        int at = email.indexOf('@');
-        int dot = email.lastIndexOf('.');
-        if (at == -1 || dot == -1 || at > dot)
-            mEmailInput.setError("Invalid email address");
-        else
-            mEmailInput.setError(null);
-    }
-
-    private void checkPassword(String password) {
-        if (TextUtils.isEmpty(password)) {
-            mPasswordInput.setError("Password is required");
-            return;
-        }
-        boolean lower = false, upper = false, digit = false, special = false;
-        if (password.length() < 8 || password.length() > 16) {
-            mPasswordInput.setError("Password must be 8 to 16 characters long");
-            return;
-        }
-        for (int i = 0; i < password.length(); ++i) {
-            char ch = password.charAt(i);
-            if (Character.isLowerCase(ch))
-                lower = true;
-            if (Character.isUpperCase(ch))
-                upper = true;
-            if (Character.isDigit(ch))
-                digit = true;
-            if (!Character.isLetterOrDigit(ch))
-                special = true;
-        }
-        if (!lower)
-            mPasswordInput.setError("Password must contain a lowercase letter");
-        else if (!upper)
-            mPasswordInput.setError("Password must contain an uppercase letter");
-        else if (!digit)
-            mPasswordInput.setError("Password must contain a digit");
-        else if (!special)
-            mPasswordInput.setError("Password must contain a special character");
-        else
-            mPasswordInput.setError(null);
-    }
-
-    private void checkConfirmPasswordAgainstPassword(String confirmPassword, String password) {
-        if (TextUtils.isEmpty(confirmPassword)) {
-            mConfirmPasswordInput.setError("Confirm password is required");
-            return;
-        }
-        if (!password.equals(confirmPassword))
-            mConfirmPasswordInput.setError("Confirm password does not match your password");
-        else
-            mConfirmPasswordInput.setError(null);
     }
 
     private void showRegisteringUi() {

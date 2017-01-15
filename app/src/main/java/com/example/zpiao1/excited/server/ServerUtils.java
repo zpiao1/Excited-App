@@ -5,6 +5,7 @@ import com.jakewharton.retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 import retrofit2.Retrofit;
@@ -28,9 +29,14 @@ public class ServerUtils {
                                            Observable<T> observable,
                                            Consumer<T> responseConsumer,
                                            Consumer<Throwable> errorConsumer) {
-        disposable.add(observable
-                .subscribeOn(Schedulers.io())
+        disposable.add(wrapObservable(observable, responseConsumer, errorConsumer));
+    }
+
+    public static <T> Disposable wrapObservable(Observable<T> observable,
+                                                Consumer<T> responseConsumer,
+                                                Consumer<Throwable> errorConsumer) {
+        return observable.subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(responseConsumer, errorConsumer));
+                .subscribe(responseConsumer, errorConsumer);
     }
 }

@@ -1,93 +1,82 @@
 package com.example.zpiao1.excited.views;
 
 import android.content.Intent;
-import android.graphics.Color;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
-import android.support.v4.content.ContextCompat;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
-import android.widget.GridView;
+import android.view.View;
 import android.widget.ImageView;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.example.zpiao1.excited.R;
-import com.example.zpiao1.excited.adapters.EventImagePagerAdapter;
-import com.example.zpiao1.excited.adapters.IconAdapter;
-import com.example.zpiao1.excited.data.CategoryIcon;
-import com.example.zpiao1.excited.data.SimpleEvent;
-import com.example.zpiao1.excited.server.IEventRequest;
-import com.example.zpiao1.excited.server.ServerUtils;
+import com.example.zpiao1.excited.data.User;
+import com.example.zpiao1.excited.server.HttpError;
+import com.example.zpiao1.excited.server.HttpErrorUtils;
+import com.example.zpiao1.excited.user.UserManager;
 import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
+import com.google.android.gms.auth.api.Auth;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.jakewharton.retrofit2.adapter.rxjava2.HttpException;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
 
 public class MainActivity extends AppCompatActivity
-        implements NavigationView.OnNavigationItemSelectedListener {
+        implements NavigationView.OnNavigationItemSelectedListener,
+        GoogleApiClient.OnConnectionFailedListener,
+        UserManager.UserActivityHandler {
 
+    public static final int LOGIN_REQUEST = 0;
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final float Y_CHANGE_THRESHOLD = 300f;
-
-    private static final String[] CATEGORIES =
-            {"movie", "art", "sports", "nightlife", "kids", "expo"};
-
-    private IconAdapter mIconAdapter;
-    private EventImagePagerAdapter mPagerAdapter;
-    private ViewPager mViewPager;
-
-    private int mGarbageIconDefaultHeight;
-    private int mStarIconDefaultHeight;
-
-
-    private boolean[] mCategoryCheckedStates;
-
     private CompositeDisposable mDisposable;
+    private ImageView mHeaderImage;
+    private TextView mHeaderUserName;
+    private TextView mHeaderEmail;
+    private NavigationView mNavigationView;
+
+    private GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
+
+        mDisposable = new CompositeDisposable();
         // Logging App Activations
         FacebookSdk.sdkInitialize(getApplicationContext());
         AppEventsLogger.activateApp(getApplication());
+        // For Google
+        GoogleSignInOptions gso = new GoogleSignInOptions
+                .Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .requestProfile()
+                .requestIdToken(getString(R.string.web_client_id))
+                .build();
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this, this)
+                .addApi(Auth.GOOGLE_SIGN_IN_API, gso)
+                .build();
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        setUpNavigationUI();
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
-        drawer.addDrawerListener(toggle);
-        toggle.syncState();
-
-        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
-        navigationView.setNavigationItemSelectedListener(this);
-
-        // Add the events to the view pager
-        mViewPager = (ViewPager) findViewById(R.id.event_view_pager);
-        loadGridView();
-
-        mDisposable = new CompositeDisposable();
-        fetchEvents();
-
-        mGarbageIconDefaultHeight = findViewById(R.id.garbage_image).getLayoutParams().height;
-        mStarIconDefaultHeight = findViewById(R.id.star_image).getLayoutParams().height;
+        if (savedInstanceState == null) {
+            MainFragment mainFragment = MainFragment.newInstance();
+            getSupportFragmentManager().beginTransaction()
+                    .add(R.id.fragment_container, mainFragment).commit();
+        }
     }
 
     @Override
@@ -96,34 +85,13 @@ public class MainActivity extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            FragmentManager fm = getSupportFragmentManager();
+            if (fm.getBackStackEntryCount() > 0) {
+                fm.popBackStack();
+            } else {
+                super.onBackPressed();
+            }
         }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        } else if (id == R.id.action_login) {
-            // Start the LoginActivity
-            startActivity(new Intent(this, LoginActivity.class));
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     @SuppressWarnings("StatementWithEmptyBody")
@@ -132,138 +100,109 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_camera) {
-            // Handle the camera action
-        } else if (id == R.id.nav_gallery) {
-
-        } else if (id == R.id.nav_slideshow) {
-
-        } else if (id == R.id.nav_manage) {
-
-        } else if (id == R.id.nav_share) {
-
-        } else if (id == R.id.nav_send) {
-
+        switch (id) {
+            case R.id.nav_view_events: {
+                break;
+            }
+            case R.id.nav_add_event: {
+                break;
+            }
+            case R.id.nav_settings: {
+                // Show the settings
+                showSettingsFragment();
+                break;
+            }
+            case R.id.nav_log_out: {
+                UserManager.logOut(this, mGoogleApiClient, this);
+                FragmentManager manager = getSupportFragmentManager();
+                // Remove the SettingsFragment if it is displayed when user logs out
+                if (manager.findFragmentById(R.id.fragment_container)
+                        instanceof SettingsFragment) {
+                    if (manager.getBackStackEntryCount() > 0)
+                        manager.popBackStack();
+                }
+                break;
+            }
+            case R.id.nav_log_in: {
+                startActivityForResult(new Intent(MainActivity.this, LoginActivity.class),
+                        LOGIN_REQUEST);
+                break;
+            }
         }
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
+        closeDrawer();
         return true;
     }
 
-    private void loadGridView() {
-        GridView gridView = (GridView) findViewById(R.id.icon_container);
-        ArrayList<CategoryIcon> categoryIcons = new ArrayList<>();
-        categoryIcons.add(new CategoryIcon("Movie", R.drawable.ic_film_reel,
-                R.drawable.ic_film_reel_grey));
-        categoryIcons.add(new CategoryIcon("Art", R.drawable.ic_masks,
-                R.drawable.ic_masks_grey));
-        categoryIcons.add(new CategoryIcon("Sports", R.drawable.ic_archery,
-                R.drawable.ic_archery_grey));
-        categoryIcons.add(new CategoryIcon("Nightlife", R.drawable.ic_wine_glass,
-                R.drawable.ic_wine_glass_grey));
-        categoryIcons.add(new CategoryIcon("Kids", R.drawable.ic_boy,
-                R.drawable.ic_boy_grey));
-        categoryIcons.add(new CategoryIcon("Expo", R.drawable.ic_exhibition,
-                R.drawable.ic_exhibition_grey));
-        mIconAdapter = new IconAdapter(MainActivity.this, categoryIcons);
+    void setUpNavigationUI() {
+        mNavigationView = (NavigationView) findViewById(R.id.nav_view);
+        mNavigationView.setNavigationItemSelectedListener(this);
+        mNavigationView.setItemIconTintList(null);
+        toggleNavMenu(UserManager.hasLoggedIn(this));
 
-        gridView.setAdapter(mIconAdapter);
+        View header = mNavigationView.getHeaderView(0);
+        mHeaderImage = (ImageView) header.findViewById(R.id.header_image);
+        mHeaderUserName = (TextView) header.findViewById(R.id.header_user_name);
+        mHeaderEmail = (TextView) header.findViewById(R.id.header_email);
 
-        // Initialize all the categories to be checked
-        mCategoryCheckedStates = new boolean[categoryIcons.size()];
-        for (int i = 0; i < mCategoryCheckedStates.length; ++i)
-            mCategoryCheckedStates[i] = true;
-    }
+        mNavigationView.setCheckedItem(R.id.nav_view_events);
+        header.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!UserManager.hasLoggedIn(MainActivity.this)) {
+                    // User is not logged in
+                    // Login the user
+                    startActivityForResult(new Intent(MainActivity.this,
+                                    LoginActivity.class),
+                            LOGIN_REQUEST);
+                } else {
+                    showSettingsFragment();
+                }
+                closeDrawer();
+            }
+        });
 
-    public void changeIconGradually(float startTouchY, float currentTouchY) {
-        float dy = currentTouchY - startTouchY;
-        // Swiping down, should change the garbage icon
-        ImageView iconImage;
-        int color;
-        int defaultHeight;
-        float scale = Math.abs(dy) / Y_CHANGE_THRESHOLD;
-        if (scale > 1)
-            scale = 1;
-        if (dy > 10) {
-            iconImage = (ImageView) findViewById(R.id.garbage_image);
-            color = ContextCompat.getColor(this, R.color.lightRed);
-            defaultHeight = mGarbageIconDefaultHeight;
-            changeIconGraduallyHelper(iconImage, color, defaultHeight, scale);
-        } else if (dy < -10) {
-            iconImage = (ImageView) findViewById(R.id.star_image);
-            color = ContextCompat.getColor(this, R.color.lightGreen);
-            defaultHeight = mStarIconDefaultHeight;
-            changeIconGraduallyHelper(iconImage, color, defaultHeight, scale);
-        }
-    }
-
-    private void changeIconGraduallyHelper(ImageView iconImage, int color, int defaultHeight, float
-            scale) {
-        // Change the size of the ImageView
-        ViewGroup.LayoutParams params = iconImage.getLayoutParams();
-        params.height = (int) (defaultHeight * (1 + scale));
-        iconImage.setLayoutParams(params);
-
-        // Change the color of the ImageView
-        int alpha = (int) (0xFF * 0.5f * scale);
-        int red = Color.red(color);
-        int green = Color.green(color);
-        int blue = Color.blue(color);
-        iconImage.setBackgroundColor(Color.argb(alpha, red, green, blue));
-    }
-
-    public void resetIcons() {
-        ImageView garbageImage = (ImageView) findViewById(R.id.garbage_image);
-        ImageView startImage = (ImageView) findViewById(R.id.star_image);
-        resetIconsHelper(garbageImage, mGarbageIconDefaultHeight);
-        resetIconsHelper(startImage, mStarIconDefaultHeight);
-    }
-
-    private void resetIconsHelper(ImageView iconImage, int defaultHeight) {
-        ViewGroup.LayoutParams params = iconImage.getLayoutParams();
-        params.height = defaultHeight;
-        iconImage.setLayoutParams(params);
-
-        iconImage.setBackgroundColor(ContextCompat.getColor(this, android.R.color.transparent));
-    }
-
-    public void onImageRemoved(Uri uri) {
-    }
-
-    public void onImageStarred(Uri uri) {
+        setUpHeaderUI();
     }
 
 
-    public void onCategoryCheckedChanged(int position, boolean isChecked) {
-        if (mCategoryCheckedStates == null)
-            throw new RuntimeException("mCategoryCheckedStates is null");
-        // If there is change in selection of categories
-        if (mCategoryCheckedStates[position] != isChecked) {
-            mCategoryCheckedStates[position] = isChecked;
-            fetchEvents();
-        }
-    }
+    private void setUpHeaderUI() {
+        UserManager.getUser(this, new UserManager.UserHandler() {
+            @Override
+            public void handleUser(User user) {
+                if (user == null)
+                    return;
+                Glide.with(MainActivity.this)
+                        .load(user.getImageUrl())
+                        .fitCenter()
+                        .into(mHeaderImage);
+                mHeaderUserName.setText(user.getDisplayName());
+                mHeaderEmail.setVisibility(View.VISIBLE);
+                mHeaderEmail.setText(user.email);
+            }
 
-    private void fetchEvents() {
-        IEventRequest request = ServerUtils.getRetrofit()
-                .create(IEventRequest.class);
-        ServerUtils.addToDisposable(mDisposable,
-                request.getEvents(buildEventSelection()),
-                new Consumer<List<SimpleEvent>>() {
-                    @Override
-                    public void accept(List<SimpleEvent> events) throws Exception {
-                        mPagerAdapter = new EventImagePagerAdapter(getSupportFragmentManager(),
-                                events);
-                        mViewPager.setAdapter(mPagerAdapter);
+            @Override
+            public void handleError(Throwable throwable) {
+                if (throwable instanceof HttpException) {
+                    try {
+                        HttpError error = HttpErrorUtils.convert(
+                                (HttpException) throwable);
+                        Log.e(TAG, "error: " + error.method);
+                        Log.e(TAG, "error: " + error.err.name);
+                        Log.e(TAG, "error: " + error.err.message);
+                    } catch (IOException e) {
+                        Log.d(TAG, "error in conversion: ", e);
                     }
-                },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.e(TAG, "fetchEvents", throwable);
-                    }
-                });
+                } else {
+                    Log.e(TAG, "error", throwable);
+                }
+            }
+        });
+    }
+
+    private void updateNavigationUI() {
+        toggleNavMenu(UserManager.hasLoggedIn(this));
+        setUpHeaderUI();
     }
 
     @Override
@@ -272,11 +211,62 @@ public class MainActivity extends AppCompatActivity
         mDisposable.clear();
     }
 
-    private String buildEventSelection() {
-        List<String> selected = new ArrayList<>();
-        for (int i = 0; i < mCategoryCheckedStates.length; ++i)
-            if (mCategoryCheckedStates[i])
-                selected.add(CATEGORIES[i]);
-        return selected.isEmpty() ? "none" : TextUtils.join("|", selected);
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == LOGIN_REQUEST && resultCode == RESULT_OK) {
+            updateNavigationUI();
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        Log.e(TAG, "onConnectionFailed" + connectionResult.getErrorMessage());
+    }
+
+    private void toggleNavMenu(boolean hasLoggedIn) {
+        Menu navMenu = mNavigationView.getMenu();
+        navMenu.setGroupVisible(R.id.nav_group_logged_in, hasLoggedIn);
+        navMenu.setGroupVisible(R.id.nav_group_logged_out, !hasLoggedIn);
+    }
+
+    @Override
+    public void onSuccess(int code) {
+        if (code == LOG_OUT_SUCCESSFUL) {
+            updateNavigationUI();
+            mNavigationView.setCheckedItem(R.id.nav_view_events);
+        } else if (code == GOOGLE_SIGN_OUT_SUCCESSFUL) {
+            Log.d(TAG, "Google Sign out successfully");
+        }
+    }
+
+    @Override
+    public void onFail(Throwable throwable, int code) {
+        if (code == LOG_OUT_FAILED) {
+            Toast.makeText(this, "Failed to log out", Toast.LENGTH_SHORT).show();
+        } else if (code == GOOGLE_SIGN_OUT_FAILED) {
+            Toast.makeText(this, "Failed to sign out Google Account", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void showSettingsFragment() {
+        mNavigationView.setCheckedItem(R.id.nav_settings);
+        FragmentManager manager = getSupportFragmentManager();
+        if (manager.findFragmentById(R.id.fragment_container)
+                instanceof SettingsFragment) {
+            // Prevent the same fragment to be added twice
+            return;
+        }
+        manager.beginTransaction()
+                .replace(R.id.fragment_container,
+                        SettingsFragment.newInstance())
+                .addToBackStack(null)
+                .commit();
+    }
+
+    private void closeDrawer() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
     }
 }
