@@ -1,11 +1,12 @@
 package com.example.zpiao1.excited.data;
 
+import android.view.View;
+
 public class SingleLineSettingsItem extends SettingsItem {
-    private int mIconResId;
     private String mText;
 
-    public SingleLineSettingsItem(int iconResId, String text) {
-        mIconResId = iconResId;
+    public SingleLineSettingsItem(int iconResId, String text, View.OnClickListener listener) {
+        super(iconResId, listener);
         mText = text;
     }
 
@@ -14,11 +15,11 @@ public class SingleLineSettingsItem extends SettingsItem {
         return SettingsItem.SINGLE_LINE_TYPE;
     }
 
-    public int getIconResource() {
-        return mIconResId;
-    }
-
     public String getText() {
         return mText;
+    }
+
+    public void setText(String text) {
+        mText = text;
     }
 }

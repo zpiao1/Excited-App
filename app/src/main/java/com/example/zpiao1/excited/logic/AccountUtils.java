@@ -68,4 +68,30 @@ public class AccountUtils {
         else
             confirmPasswordLayout.setError(null);
     }
+
+    public static void checkOriginalPassword(TextInputEditText originalPasswordText,
+                                             TextInputLayout originalPasswordLayout) {
+        String originalPassword = originalPasswordText.getText().toString();
+        if (TextUtils.isEmpty(originalPassword)) {
+            originalPasswordLayout.setError("Original password is required");
+        } else {
+            originalPasswordLayout.setError(null);
+        }
+    }
+
+    public static void checkNewPasswordAgainstOriginalPassword(TextInputEditText newPasswordText,
+                                                               TextInputLayout newPasswordLayout,
+                                                               TextInputEditText originalPasswordText) {
+        String originalPassword = originalPasswordText.getText().toString();
+        String newPassword = newPasswordText.getText().toString();
+        if (TextUtils.isEmpty(originalPassword)) {
+            newPasswordLayout.setError("New password is required");
+            return;
+        }
+        if (newPassword.equals(originalPassword)) {
+            newPasswordLayout.setError("New Password must be different from original");
+        } else {
+            checkPassword(newPasswordText, newPasswordLayout);
+        }
+    }
 }

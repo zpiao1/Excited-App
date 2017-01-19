@@ -418,7 +418,7 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
                 .origins(mCurLatLng)
                 .destinations(mDestLatLng)
                 .mode(mode)
-                .departureTime(DateTime.now())
+                .departureTime(DateTime.now().plus(2 * 60 * 1000L)) // 5 minutes later
                 .setCallback(new PendingResult.Callback<DistanceMatrix>() {
                     @Override
                     public synchronized void onResult(DistanceMatrix result) {
@@ -496,6 +496,7 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
                     new Consumer<LikesOrDislikesResponse>() {
                         @Override
                         public void accept(LikesOrDislikesResponse likesOrDislikesResponse) throws Exception {
+                            // TODO update the code to reflect change in likes
                             String response = TextUtils.join(" ", likesOrDislikesResponse.events);
                             Log.d(TAG, response);
                         }

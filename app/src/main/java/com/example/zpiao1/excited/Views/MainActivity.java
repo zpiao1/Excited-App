@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
@@ -19,9 +20,10 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.User;
+import com.example.zpiao1.excited.logic.Observer;
+import com.example.zpiao1.excited.logic.UserManager;
 import com.example.zpiao1.excited.server.HttpError;
 import com.example.zpiao1.excited.server.HttpErrorUtils;
-import com.example.zpiao1.excited.user.UserManager;
 import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
 import com.google.android.gms.auth.api.Auth;
@@ -37,9 +39,11 @@ import io.reactivex.disposables.CompositeDisposable;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener,
         GoogleApiClient.OnConnectionFailedListener,
-        UserManager.UserActivityHandler {
+        UserManager.UserActivityHandler,
+        Observer<User> {
 
     public static final int LOGIN_REQUEST = 0;
+    public static final int SUBSCRIBE_ID = 0;
     private static final String TAG = MainActivity.class.getSimpleName();
     private CompositeDisposable mDisposable;
     private ImageView mHeaderImage;
@@ -52,6 +56,9 @@ public class MainActivity extends AppCompatActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // initialize the user subject
+        UserManager.init(getApplicationContext());
+
         setContentView(R.layout.activity_main);
 
         mDisposable = new CompositeDisposable();
@@ -71,11 +78,13 @@ public class MainActivity extends AppCompatActivity
                 .build();
 
         setUpNavigationUI();
+        UserManager.subscribeForUser(SUBSCRIBE_ID, this);
 
         if (savedInstanceState == null) {
             MainFragment mainFragment = MainFragment.newInstance();
             getSupportFragmentManager().beginTransaction()
-                    .add(R.id.fragment_container, mainFragment).commit();
+                    .add(R.id.fragment_container, mainFragment)
+                    .commit();
         }
     }
 
@@ -88,6 +97,7 @@ public class MainActivity extends AppCompatActivity
             FragmentManager fm = getSupportFragmentManager();
             if (fm.getBackStackEntryCount() > 0) {
                 fm.popBackStack();
+                mNavigationView.setCheckedItem(R.id.nav_view_events);
             } else {
                 super.onBackPressed();
             }
@@ -102,6 +112,7 @@ public class MainActivity extends AppCompatActivity
 
         switch (id) {
             case R.id.nav_view_events: {
+                showViewEventsFragment();
                 break;
             }
             case R.id.nav_add_event: {
@@ -138,7 +149,6 @@ public class MainActivity extends AppCompatActivity
         mNavigationView = (NavigationView) findViewById(R.id.nav_view);
         mNavigationView.setNavigationItemSelectedListener(this);
         mNavigationView.setItemIconTintList(null);
-        toggleNavMenu(UserManager.hasLoggedIn(this));
 
         View header = mNavigationView.getHeaderView(0);
         mHeaderImage = (ImageView) header.findViewById(R.id.header_image);
@@ -162,58 +172,24 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        setUpHeaderUI();
-    }
-
-
-    private void setUpHeaderUI() {
-        UserManager.getUser(this, new UserManager.UserHandler() {
-            @Override
-            public void handleUser(User user) {
-                if (user == null)
-                    return;
-                Glide.with(MainActivity.this)
-                        .load(user.getImageUrl())
-                        .fitCenter()
-                        .into(mHeaderImage);
-                mHeaderUserName.setText(user.getDisplayName());
-                mHeaderEmail.setVisibility(View.VISIBLE);
-                mHeaderEmail.setText(user.email);
-            }
-
-            @Override
-            public void handleError(Throwable throwable) {
-                if (throwable instanceof HttpException) {
-                    try {
-                        HttpError error = HttpErrorUtils.convert(
-                                (HttpException) throwable);
-                        Log.e(TAG, "error: " + error.method);
-                        Log.e(TAG, "error: " + error.err.name);
-                        Log.e(TAG, "error: " + error.err.message);
-                    } catch (IOException e) {
-                        Log.d(TAG, "error in conversion: ", e);
-                    }
-                } else {
-                    Log.e(TAG, "error", throwable);
-                }
-            }
-        });
+        updateNavigationUI();
     }
 
     private void updateNavigationUI() {
         toggleNavMenu(UserManager.hasLoggedIn(this));
-        setUpHeaderUI();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mDisposable.clear();
+        UserManager.unsubscribeForUser(SUBSCRIBE_ID);
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == LOGIN_REQUEST && resultCode == RESULT_OK) {
+            UserManager.fetchUser(this);
             updateNavigationUI();
         }
         super.onActivityResult(requestCode, resultCode, data);
@@ -227,15 +203,18 @@ public class MainActivity extends AppCompatActivity
 
     private void toggleNavMenu(boolean hasLoggedIn) {
         Menu navMenu = mNavigationView.getMenu();
-        navMenu.setGroupVisible(R.id.nav_group_logged_in, hasLoggedIn);
-        navMenu.setGroupVisible(R.id.nav_group_logged_out, !hasLoggedIn);
+        navMenu.findItem(R.id.nav_log_in).setVisible(!hasLoggedIn);
+        navMenu.findItem(R.id.nav_settings).setVisible(hasLoggedIn);
+        navMenu.findItem(R.id.nav_log_out).setVisible(hasLoggedIn);
     }
 
     @Override
     public void onSuccess(int code) {
         if (code == LOG_OUT_SUCCESSFUL) {
+            Toast.makeText(this, "You are logged out", Toast.LENGTH_SHORT).show();
             updateNavigationUI();
-            mNavigationView.setCheckedItem(R.id.nav_view_events);
+            resetHeader();
+            showViewEventsFragment();
         } else if (code == GOOGLE_SIGN_OUT_SUCCESSFUL) {
             Log.d(TAG, "Google Sign out successfully");
         }
@@ -260,13 +239,84 @@ public class MainActivity extends AppCompatActivity
         }
         manager.beginTransaction()
                 .replace(R.id.fragment_container,
-                        SettingsFragment.newInstance())
+                        SettingsFragment.newInstance(mGoogleApiClient))
+                .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out,
+                        android.R.anim.fade_in, android.R.anim.fade_out)
                 .addToBackStack(null)
+                .commit();
+    }
+
+    private void showViewEventsFragment() {
+        mNavigationView.setCheckedItem(R.id.nav_view_events);
+        FragmentManager manager = getSupportFragmentManager();
+        Fragment fragment = manager.findFragmentById(R.id.fragment_container);
+        if (fragment != null && fragment instanceof MainFragment) {
+            return;
+        }
+        if (manager.getBackStackEntryCount() > 0) {
+            manager.popBackStack();
+        }
+        fragment = manager.findFragmentById(R.id.fragment_container);
+        if (fragment != null && fragment instanceof MainFragment) {
+            return;
+        }
+        manager.beginTransaction()
+                .replace(R.id.fragment_container,
+                        MainFragment.newInstance())
                 .commit();
     }
 
     private void closeDrawer() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
+    }
+
+    private void resetHeader() {
+        mHeaderImage.setImageResource(R.drawable.ic_user_not_logged_in);
+        mHeaderUserName.setText(getString(R.string.header_log_in));
+        mHeaderEmail.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void onNext(User user) {
+        Log.d(TAG, "onNext: user " + (user != null));
+        if (user == null) {
+            throw new NullPointerException("User is null!");
+        } else if (user.status == User.STATUS_INIT || user.status == User.STATUS_LOGGED_OUT) {
+            resetHeader();
+        } else if (user.status == User.STATUS_PASSWORD_CHANGED) {
+            Toast.makeText(this, "Password is changed successfully.\nPlease Sign in again.",
+                    Toast.LENGTH_SHORT).show();
+            UserManager.logOut(this, mGoogleApiClient, this);
+        } else if (user.status == User.STATUS_LOGGED_IN) {
+            if (user.getImageUrl() == null)
+                mHeaderImage.setImageResource(R.drawable.ic_user_not_logged_in);
+            else {
+                Glide.with(MainActivity.this)
+                        .load(user.getImageUrl())
+                        .fitCenter()
+                        .into(mHeaderImage);
+            }
+            mHeaderUserName.setText(user.getDisplayName());
+            mHeaderEmail.setVisibility(View.VISIBLE);
+            mHeaderEmail.setText(user.email);
+        }
+
+    }
+
+    @Override
+    public void onError(Throwable throwable) {
+        if (throwable instanceof HttpException) {
+            try {
+                HttpError error = HttpErrorUtils.convert((HttpException) throwable);
+                Log.e(TAG, "error: " + error.method);
+                Log.e(TAG, "error: " + error.err.name);
+                Log.e(TAG, "error: " + error.err.message);
+            } catch (IOException e) {
+                Log.d(TAG, "error in conversion: ", e);
+            }
+        } else {
+            Log.e(TAG, "error", throwable);
+        }
     }
 }

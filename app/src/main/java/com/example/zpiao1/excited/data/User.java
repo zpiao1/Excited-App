@@ -4,6 +4,10 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 public class User {
+    public static final int STATUS_INIT = 0;
+    public static final int STATUS_LOGGED_IN = 1;
+    public static final int STATUS_LOGGED_OUT = 2;
+    public static final int STATUS_PASSWORD_CHANGED = 3;
     @SerializedName("_id")
     @Expose
     public String id;
@@ -19,6 +23,10 @@ public class User {
     @SerializedName("googleProfile")
     @Expose
     public GoogleProfile googleProfile;
+    @SerializedName("hasLocalProfile")
+    @Expose
+    public Boolean hasLocalProfile;
+    public int status = STATUS_INIT;
 
     public String getEmail() {
         return email;

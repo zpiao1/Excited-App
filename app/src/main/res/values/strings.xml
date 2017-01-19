@@ -46,7 +46,8 @@
     <string name="pref_token_key">token</string>
     <string name="pref_id_key">id</string>
     <string name="pref_display_name_key">display_name</string>
-    <string name="pref_has_google_signed_in_key">is_google_signed_in</string>
+    <string name="pref_has_google_signed_in_key">has_google_signed_in</string>
+    <string name="pref_has_email_logged_in_key">has_email_logged_in</string>
 
     <string name="prompt_verify_email">Verify your email now?</string>
     <string name="verify_email_message">Congratulations! You have registered with Excited! You may
@@ -67,6 +68,8 @@ Mauris eget fringilla orci. Maecenas luctus eros ullamcorper enim elementum, ele
     <string name="pref_title_change_name">Change Name</string>
     <string name="pref_title_change_password">Change Password</string>
     <string name="pref_title_link_google">Link Google Account</string>
+    <string name="pref_title_unlink_google">Unlink Google Account</string>
+    <string name="pref_title_unlink_facebook">Unlink Facebook Account</string>
     <string name="pref_title_link_facebook">Link Facebook Account</string>
 
     <string name="pref_summ_change_name">Change your profile photo here.</string>
@@ -76,6 +79,7 @@ Mauris eget fringilla orci. Maecenas luctus eros ullamcorper enim elementum, ele
     <string name="discard">Discard</string>
     <string name="prompt_original_password">Original Password</string>
     <string name="prompt_new_password">New Password</string>
+    <string name="prompt_confirm_new_password">Confirm New Password</string>
 
     <string name="progress_loading">Loading</string>
     <string name="nav_title_events">Events</string>
