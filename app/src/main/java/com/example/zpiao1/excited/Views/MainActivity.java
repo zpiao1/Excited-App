@@ -1,6 +1,7 @@
 package com.example.zpiao1.excited.views;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
@@ -18,6 +19,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.load.model.GlideUrl;
+import com.bumptech.glide.load.model.LazyHeaders;
 import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.User;
 import com.example.zpiao1.excited.logic.Observer;
@@ -292,10 +296,21 @@ public class MainActivity extends AppCompatActivity
             if (user.getImageUrl() == null)
                 mHeaderImage.setImageResource(R.drawable.ic_user_not_logged_in);
             else {
-                Glide.with(MainActivity.this)
-                        .load(user.getImageUrl())
-                        .fitCenter()
-                        .into(mHeaderImage);
+                Log.d(TAG, "imageUri: " + user.getImageUrl());
+                SharedPreferences prefs = getSharedPreferences(getString(R.string.shared_pref_name_server), MODE_PRIVATE);
+                String token = prefs.getString(getString(R.string.pref_token_key), null);
+                if (token != null) {
+                    LazyHeaders headers = new LazyHeaders.Builder()
+                            .addHeader("x-access-token", token)
+                            .build();
+                    GlideUrl url = new GlideUrl(user.getImageUrl(), headers);
+                    Glide.with(MainActivity.this)
+                            .load(url)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .skipMemoryCache(true)
+                            .fitCenter()
+                            .into(mHeaderImage);
+                }
             }
             mHeaderUserName.setText(user.getDisplayName());
             mHeaderEmail.setVisibility(View.VISIBLE);

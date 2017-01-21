@@ -5,12 +5,15 @@ import com.example.zpiao1.excited.data.User;
 import java.util.HashMap;
 
 import io.reactivex.Observable;
+import okhttp3.MultipartBody;
 import retrofit2.http.Body;
 import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.Header;
+import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
+import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
 
@@ -65,4 +68,10 @@ public interface IUserRequest {
     Observable<User> linkGoogle(@Path("id") String id,
                                 @Header("x-access-token") String token,
                                 @Query("id_token") String idToken);
+
+    @Multipart
+    @POST("users/{id}/upload")
+    Observable<User> uploadImage(@Path("id") String id,
+                                 @Header("x-access-token") String token,
+                                 @Part MultipartBody.Part imageFile);
 }

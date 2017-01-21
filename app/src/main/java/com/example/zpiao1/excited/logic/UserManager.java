@@ -25,9 +25,12 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Status;
 
+import java.io.File;
 import java.util.HashMap;
 
 import io.reactivex.functions.Consumer;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 
 
 public class UserManager {
@@ -609,6 +612,40 @@ public class UserManager {
                     @Override
                     public void accept(Throwable throwable) throws Exception {
                         handler.onFail(throwable, UserActivityHandler.UNLINK_GOOGLE_FAILED);
+                    }
+                });
+    }
+
+    public static void uploadImage(Context context, File imageFile) {
+        if (imageFile == null) {
+            return;
+        }
+        SharedPreferences prefs = context.getSharedPreferences(
+                context.getString(R.string.shared_pref_name_server),
+                Context.MODE_PRIVATE);
+        String id = prefs.getString(context.getString(R.string.pref_id_key), null);
+        String token = prefs.getString(context.getString(R.string.pref_token_key), null);
+        if (id == null || token == null) {
+            return;
+        }
+        RequestBody requestFile = RequestBody.create(MultipartBody.FORM, imageFile);
+        MultipartBody.Part imageBody = MultipartBody.Part.createFormData("image",
+                imageFile.getName(), requestFile);
+
+        IUserRequest request = ServerUtils.getRetrofit()
+                .create(IUserRequest.class);
+        ServerUtils.wrapObservable(request.uploadImage(id, token, imageBody),
+                new Consumer<User>() {
+                    @Override
+                    public void accept(User user) throws Exception {
+                        user.status = User.STATUS_LOGGED_IN;
+                        setUser(user);
+                    }
+                },
+                new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        mUserSubject.updateError(throwable);
                     }
                 });
     }

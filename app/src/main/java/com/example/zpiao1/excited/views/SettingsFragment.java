@@ -1,11 +1,15 @@
 package com.example.zpiao1.excited.views;
 
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.design.widget.TextInputEditText;
 import android.support.design.widget.TextInputLayout;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.FileProvider;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
@@ -26,6 +30,7 @@ import com.example.zpiao1.excited.data.SingleLineSettingsItem;
 import com.example.zpiao1.excited.data.TwoLinesSettingsItem;
 import com.example.zpiao1.excited.data.User;
 import com.example.zpiao1.excited.logic.AccountUtils;
+import com.example.zpiao1.excited.logic.ImageManager;
 import com.example.zpiao1.excited.logic.Observer;
 import com.example.zpiao1.excited.logic.UserManager;
 import com.facebook.FacebookCallback;
@@ -33,21 +38,27 @@ import com.facebook.FacebookException;
 import com.facebook.login.LoginManager;
 import com.facebook.login.LoginResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.theartofdev.edmodo.cropper.CropImage;
+import com.theartofdev.edmodo.cropper.CropImageView;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 
 public class SettingsFragment extends Fragment
         implements Observer<User>,
         UserManager.UserActivityHandler {
 
     public static final int SUBSCRIBE_ID = 1;
+    public static final int REQUEST_READ = 1;
+    public static final int REQUEST_TAKE_PHOTO = 2;
     private static final String TAG = SettingsFragment.class.getSimpleName();
     private List<SettingsItem> mItems;
     private User mUser = null;
     private SettingsItemAdapter mAdapter;
+    private Uri mPhotoUri;
 
     private SingleLineSettingsItem mChangePhotoItem,
             mChangePasswordItem,
@@ -121,7 +132,8 @@ public class SettingsFragment extends Fragment
                     @Override
                     public void onClick(DialogInterface dialogInterface, int which) {
                         String name = changeNameText.getText().toString();
-                        if (TextUtils.isEmpty(name) || name.equals(mUser.getDisplayName())) {
+                        if (TextUtils.isEmpty(name) ||
+                                name.equals(mUser.getDisplayName())) {
                             Toast.makeText(getContext(),
                                     "Display Name is Not Changed.",
                                     Toast.LENGTH_SHORT)
@@ -166,16 +178,19 @@ public class SettingsFragment extends Fragment
                     public void onClick(DialogInterface dialog, int which) {
                         AccountUtils.checkOriginalPassword(originalPasswordText,
                                 originalPasswordLayout);
-                        AccountUtils.checkNewPasswordAgainstOriginalPassword(newPasswordText,
+                        AccountUtils.checkNewPasswordAgainstOriginalPassword(
+                                newPasswordText,
                                 newPasswordLayout,
                                 originalPasswordText);
-                        AccountUtils.checkConfirmPasswordAgainstPassword(newConfirmPasswordText,
+                        AccountUtils.checkConfirmPasswordAgainstPassword(
+                                newConfirmPasswordText,
                                 newConfirmPasswordLayout,
                                 newPasswordText);
                         if (originalPasswordLayout.getError() == null &&
                                 newPasswordLayout.getError() == null &&
                                 newConfirmPasswordLayout.getError() == null) {
-                            UserManager.changeUserPassword(originalPasswordText.getText().toString(),
+                            UserManager.changeUserPassword(originalPasswordText.getText()
+                                            .toString(),
                                     newPasswordText.getText().toString(),
                                     getContext());
                             dialog.dismiss();
@@ -192,7 +207,24 @@ public class SettingsFragment extends Fragment
     }
 
     private void showChangePhotoDialog() {
-
+        new AlertDialog.Builder(getActivity())
+                .setTitle(R.string.pref_title_change_photo)
+                .setIcon(R.drawable.ic_photo_camera)
+                .setItems(R.array.photo_options, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Log.d(TAG, "The " + which + " item is selected.");
+                        if (which == 0) {
+                            // Take Photo
+                            takePictures();
+                        } else if (which == 1) {
+                            // Your Photos
+                            selectPhotos();
+                        }
+                        dialog.dismiss();
+                    }
+                })
+                .show();
     }
 
     private void showUnlinkFacebookDialog() {
@@ -202,7 +234,8 @@ public class SettingsFragment extends Fragment
                 .setPositiveButton("Disconnect", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        UserManager.unlinkFacebookAccount(getContext(), SettingsFragment.this);
+                        UserManager.unlinkFacebookAccount(getContext(),
+                                SettingsFragment.this);
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -305,7 +338,8 @@ public class SettingsFragment extends Fragment
         if (mItems == null) {
             throw new IllegalStateException("Items is null!");
         }
-        if (user.status == User.STATUS_INIT || user.status == User.STATUS_PASSWORD_CHANGED) {
+        if (user.status == User.STATUS_INIT ||
+                user.status == User.STATUS_PASSWORD_CHANGED) {
             Log.d(TAG, "User status not useful");
         } else if (user.status == User.STATUS_LOGGED_OUT) {
             Log.d(TAG, "User is logged out");
@@ -377,7 +411,7 @@ public class SettingsFragment extends Fragment
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-
+                        showChangePhotoDialog();
                     }
                 });
         mChangeNameItem = new TwoLinesSettingsItem(R.drawable.ic_pen,
@@ -429,6 +463,34 @@ public class SettingsFragment extends Fragment
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+        if (requestCode == REQUEST_READ && resultCode == Activity.RESULT_OK) {
+            if (data != null) {
+                Log.d(TAG, "REQUEST_READ uri: " + data.getData());
+                cropImage(data.getData());
+            }
+            return;
+        }
+
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+            if (resultCode == Activity.RESULT_OK) {
+                Uri resultUri = result.getUri();
+                Log.d(TAG, "resultUri: " + resultUri);
+                File file = new File(resultUri.getPath());
+                UserManager.uploadImage(getContext(), file);
+            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                Log.e(TAG, "error", result.getError());
+            }
+            return;
+        }
+
+        if (requestCode == REQUEST_TAKE_PHOTO && resultCode == Activity.RESULT_OK) {
+            if (mPhotoUri != null) {
+                cropImage(mPhotoUri);
+            }
+            return;
+        }
+
         UserManager.handleActivityResult(this, requestCode, resultCode, data, this);
     }
 
@@ -437,19 +499,23 @@ public class SettingsFragment extends Fragment
         Log.d(TAG, MESSAGES[code]);
         switch (code) {
             case LINK_FACEBOOK_SUCCESSFUL:
-                Toast.makeText(getContext(), "You are connected to Facebook!", Toast.LENGTH_SHORT)
+                Toast.makeText(getContext(), "You are connected to Facebook!",
+                        Toast.LENGTH_SHORT)
                         .show();
                 break;
             case LINK_GOOGLE_SUCCESSFUL:
-                Toast.makeText(getContext(), "You are connected to Google!", Toast.LENGTH_SHORT)
+                Toast.makeText(getContext(), "You are connected to Google!",
+                        Toast.LENGTH_SHORT)
                         .show();
                 break;
             case UNLINK_FACEBOOK_SUCCESSFUL:
-                Toast.makeText(getContext(), "You are disconnected from Facebook", Toast.LENGTH_SHORT)
+                Toast.makeText(getContext(), "You are disconnected from Facebook",
+                        Toast.LENGTH_SHORT)
                         .show();
                 break;
             case UNLINK_GOOGLE_SUCCESSFUL:
-                Toast.makeText(getContext(), "You are disconnected from Google", Toast.LENGTH_SHORT)
+                Toast.makeText(getContext(), "You are disconnected from Google",
+                        Toast.LENGTH_SHORT)
                         .show();
                 break;
         }
@@ -458,5 +524,41 @@ public class SettingsFragment extends Fragment
     @Override
     public void onFail(Throwable throwable, int code) {
         Log.e(TAG, "handleUserActivity: " + MESSAGES[code], throwable);
+    }
+
+    private void selectPhotos() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("image/*");
+        startActivityForResult(intent, REQUEST_READ);
+    }
+
+    private void takePictures() {
+        Intent takePicIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        if (takePicIntent.resolveActivity(getContext().getPackageManager()) != null) {
+            File photoFile = null;
+            try {
+                photoFile = ImageManager.createImageFile(getContext());
+            } catch (IOException e) {
+                Log.e(TAG, "takePictures", e);
+            }
+            if (photoFile != null) {
+                mPhotoUri = FileProvider.getUriForFile(getContext(),
+                        "com.example.zpiao1.excited.fileprovider",
+                        photoFile);
+                Log.d(TAG, "mPhotoUri: " + mPhotoUri);
+                takePicIntent.putExtra(MediaStore.EXTRA_OUTPUT, mPhotoUri);
+                startActivityForResult(takePicIntent, REQUEST_TAKE_PHOTO);
+            }
+        }
+    }
+
+    private void cropImage(Uri uri) {
+        CropImage.activity(uri)
+                .setGuidelines(CropImageView.Guidelines.ON)
+                .setAspectRatio(1, 1)
+                .setRequestedSize(250, 250)
+                .setCropShape(CropImageView.CropShape.OVAL)
+                .start(getContext(), this);
     }
 }

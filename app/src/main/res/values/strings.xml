@@ -84,4 +84,9 @@ Mauris eget fringilla orci. Maecenas luctus eros ullamcorper enim elementum, ele
     <string name="progress_loading">Loading</string>
     <string name="nav_title_events">Events</string>
     <string name="nav_title_account">Account</string>
+
+    <string-array name="photo_options">
+        <item>Take Photo</item>
+        <item>Your Photos</item>
+    </string-array>
 </resources>
