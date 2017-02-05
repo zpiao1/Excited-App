@@ -89,4 +89,7 @@ Mauris eget fringilla orci. Maecenas luctus eros ullamcorper enim elementum, ele
         <item>Take Photo</item>
         <item>Your Photos</item>
     </string-array>
+
+    <string name="title_interested">Interested</string>
+    <string name="title_uninterested">Uninterested</string>
 </resources>

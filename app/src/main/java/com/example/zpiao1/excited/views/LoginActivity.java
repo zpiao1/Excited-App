@@ -8,14 +8,10 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.View;
-import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.zpiao1.excited.R;
@@ -24,7 +20,6 @@ import com.example.zpiao1.excited.server.HttpError;
 import com.example.zpiao1.excited.server.HttpErrorUtils;
 import com.facebook.FacebookCallback;
 import com.facebook.FacebookException;
-import com.facebook.FacebookSdk;
 import com.facebook.login.LoginResult;
 import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.auth.api.Auth;
@@ -65,8 +60,6 @@ public class LoginActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
 
         mDisposable = new CompositeDisposable();
-        // For Facebook
-        FacebookSdk.sdkInitialize(getApplicationContext());
         // For Google
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestEmail()
@@ -84,20 +77,13 @@ public class LoginActivity extends AppCompatActivity
         mEmailView = (AutoCompleteTextView) findViewById(R.id.email);
 
         mPasswordView = (EditText) findViewById(R.id.password);
-        mPasswordView.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int id, KeyEvent keyEvent) {
-                return id == R.id.login || id == EditorInfo.IME_NULL;
-            }
-        });
+        mPasswordView.setOnEditorActionListener(
+                (textView, id, keyEvent) -> id == R.id.login || id == EditorInfo.IME_NULL);
+
 
         Button mRegisterButton = (Button) findViewById(R.id.register_button);
-        mRegisterButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
-            }
-        });
+        mRegisterButton.setOnClickListener(
+                view -> startActivity(new Intent(LoginActivity.this, RegisterActivity.class)));
 
         setUpEmailLogIn();
         setupGoogleSignIn();
@@ -130,26 +116,19 @@ public class LoginActivity extends AppCompatActivity
 
     private void setUpEmailLogIn() {
         Button mEmailSignInButton = (Button) findViewById(R.id.email_sign_in_button);
-        mEmailSignInButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                toggleProgressUi(true);
-                UserManager.emailLogIn(mEmailView.getText().toString(),
-                        mPasswordView.getText().toString(),
-                        LoginActivity.this,
-                        LoginActivity.this);
-            }
+        mEmailSignInButton.setOnClickListener(view -> {
+            toggleProgressUi(true);
+            UserManager.emailLogIn(mEmailView.getText().toString(),
+                    mPasswordView.getText().toString(),
+                    LoginActivity.this,
+                    LoginActivity.this);
         });
     }
 
     void setupGoogleSignIn() {
         SignInButton signInButton = (SignInButton) findViewById(R.id.google_sign_in_button);
-        signInButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                UserManager.googleSignIn(mGoogleApiClient, LoginActivity.this);
-            }
-        });
+        signInButton.setOnClickListener(
+                view -> UserManager.googleSignIn(mGoogleApiClient, LoginActivity.this));
     }
 
     void setUpFacebookLogIn() {

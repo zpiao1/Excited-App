@@ -28,7 +28,6 @@ import com.example.zpiao1.excited.logic.Observer;
 import com.example.zpiao1.excited.logic.UserManager;
 import com.example.zpiao1.excited.server.HttpError;
 import com.example.zpiao1.excited.server.HttpErrorUtils;
-import com.facebook.FacebookSdk;
 import com.facebook.appevents.AppEventsLogger;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -66,8 +65,6 @@ public class MainActivity extends AppCompatActivity
         setContentView(R.layout.activity_main);
 
         mDisposable = new CompositeDisposable();
-        // Logging App Activations
-        FacebookSdk.sdkInitialize(getApplicationContext());
         AppEventsLogger.activateApp(getApplication());
         // For Google
         GoogleSignInOptions gso = new GoogleSignInOptions
@@ -160,20 +157,17 @@ public class MainActivity extends AppCompatActivity
         mHeaderEmail = (TextView) header.findViewById(R.id.header_email);
 
         mNavigationView.setCheckedItem(R.id.nav_view_events);
-        header.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                if (!UserManager.hasLoggedIn(MainActivity.this)) {
-                    // User is not logged in
-                    // Login the user
-                    startActivityForResult(new Intent(MainActivity.this,
-                                    LoginActivity.class),
-                            LOGIN_REQUEST);
-                } else {
-                    showSettingsFragment();
-                }
-                closeDrawer();
+        header.setOnClickListener(view -> {
+            if (!UserManager.hasLoggedIn(MainActivity.this)) {
+                // User is not logged in
+                // Login the user
+                startActivityForResult(new Intent(MainActivity.this,
+                                LoginActivity.class),
+                        LOGIN_REQUEST);
+            } else {
+                showSettingsFragment();
             }
+            closeDrawer();
         });
 
         updateNavigationUI();

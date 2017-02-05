@@ -1,6 +1,5 @@
 package com.example.zpiao1.excited.views;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -10,12 +9,10 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.zpiao1.excited.R;
@@ -23,14 +20,12 @@ import com.example.zpiao1.excited.logic.AccountUtils;
 import com.example.zpiao1.excited.server.HttpError;
 import com.example.zpiao1.excited.server.HttpErrorUtils;
 import com.example.zpiao1.excited.server.IUserRequest;
-import com.example.zpiao1.excited.server.RegisterResponse;
 import com.example.zpiao1.excited.server.ServerUtils;
 import com.jakewharton.retrofit2.adapter.rxjava2.HttpException;
 
 import java.util.HashMap;
 
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
 
 public class RegisterActivity extends AppCompatActivity {
 
@@ -73,92 +68,75 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void configureUI() {
-        mEmailText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean hasFocus) {
-                if (!hasFocus) {    // when it loses focus
-                    AccountUtils.checkEmail(mEmailText, mEmailInput);
-                }
-            }
-        });
-
-        mEmailText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
-                if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    AccountUtils.checkEmail(mEmailText, mEmailInput);
-                    return mEmailInput.getError() == null;
-                }
-                return false;
-            }
-        });
-        mPasswordText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean hasFocus) {
-                if (!hasFocus) {
-                    AccountUtils.checkPassword(mPasswordText, mPasswordInput);
-                }
-            }
-        });
-
-        mPasswordText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
-                if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    AccountUtils.checkPassword(mPasswordText, mPasswordInput);
-                    return mPasswordInput.getError() == null;
-                }
-                return false;
-            }
-        });
-        mConfirmPasswordText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean hasFocus) {
-                if (!hasFocus) {
-                    AccountUtils.checkConfirmPasswordAgainstPassword(mConfirmPasswordText,
-                            mConfirmPasswordInput,
-                            mPasswordText);
-                }
-            }
-        });
-        mConfirmPasswordText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
-                if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                    AccountUtils.checkConfirmPasswordAgainstPassword(mConfirmPasswordText,
-                            mConfirmPasswordInput,
-                            mPasswordText);
-                    return mConfirmPasswordInput.getError() == null;
-                }
-                return false;
-            }
-        });
-        mRegisterBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // Check the input fields
+        mEmailText.setOnFocusChangeListener((view, hasFocus) -> {
+            if (!hasFocus) {    // when it loses focus
                 AccountUtils.checkEmail(mEmailText, mEmailInput);
+            }
+        });
+
+        mEmailText.setOnEditorActionListener((textView, actionId, keyEvent) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                AccountUtils.checkEmail(mEmailText, mEmailInput);
+                return mEmailInput.getError() == null;
+            }
+            return false;
+        });
+
+        mPasswordText.setOnFocusChangeListener((view, hasFocus) -> {
+            if (!hasFocus) {
                 AccountUtils.checkPassword(mPasswordText, mPasswordInput);
+            }
+        });
+
+        mPasswordText.setOnEditorActionListener((textView, actionId, keyEvent) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                AccountUtils.checkPassword(mPasswordText, mPasswordInput);
+                return mPasswordInput.getError() == null;
+            }
+            return false;
+        });
+
+        mConfirmPasswordText.setOnFocusChangeListener((view, hasFocus) -> {
+            if (!hasFocus) {
                 AccountUtils.checkConfirmPasswordAgainstPassword(mConfirmPasswordText,
                         mConfirmPasswordInput,
                         mPasswordText);
-                if (mEmailInput.getError() != null
-                        || mPasswordInput.getError() != null
-                        || mConfirmPasswordInput.getError() != null) {
-                    Toast.makeText(RegisterActivity.this, "Please fill in the field correctly",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                // Show the progress bar
-                showRegisteringUi();
-                register(mEmailText.getText().toString(),
-                        mPasswordText.getText().toString(),
-                        mNameText.getText().toString());
             }
+        });
+
+        mConfirmPasswordText.setOnEditorActionListener((textView, actionId, keyEvent) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                AccountUtils.checkConfirmPasswordAgainstPassword(mConfirmPasswordText,
+                        mConfirmPasswordInput,
+                        mPasswordText);
+                return mConfirmPasswordInput.getError() == null;
+            }
+            return false;
+        });
+
+        mRegisterBtn.setOnClickListener(view -> {
+            // Check the input fields
+            AccountUtils.checkEmail(mEmailText, mEmailInput);
+            AccountUtils.checkPassword(mPasswordText, mPasswordInput);
+            AccountUtils.checkConfirmPasswordAgainstPassword(mConfirmPasswordText,
+                    mConfirmPasswordInput,
+                    mPasswordText);
+            if (mEmailInput.getError() != null
+                    || mPasswordInput.getError() != null
+                    || mConfirmPasswordInput.getError() != null) {
+                Toast.makeText(RegisterActivity.this, "Please fill in the field correctly",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+            // Show the progress bar
+            showRegisteringUi();
+            register(mEmailText.getText().toString(),
+                    mPasswordText.getText().toString(),
+                    mNameText.getText().toString());
         });
     }
 
-    private void register(final String email, String password, String name) {
+    private void register(String email, String password, String name) {
         HashMap<String, Object> body = new HashMap<>();
         body.put("email", email);
         body.put("password", password);
@@ -167,67 +145,55 @@ public class RegisterActivity extends AppCompatActivity {
                 .create(IUserRequest.class);
         ServerUtils.addToDisposable(mDisposable,
                 request.register(body),
-                new Consumer<RegisterResponse>() {
-                    @Override
-                    public void accept(final RegisterResponse registerResponse) throws Exception {
-                        hideRegisteringUi();
-                        if (registerResponse.success) {
-                            new AlertDialog.Builder(RegisterActivity.this)
-                                    .setTitle(R.string.prompt_verify_email)
-                                    .setMessage(R.string.verify_email_message)
-                                    .setPositiveButton("Verify", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-                                            Uri url = Uri.parse(registerResponse.url);
-                                            Intent intent = new Intent(Intent.ACTION_VIEW, url);
-                                            if (intent.resolveActivity(getPackageManager()) != null) {
-                                                startActivity(intent);
-                                            } else {
-                                                Toast.makeText(RegisterActivity.this,
-                                                        "Cannot open your browser. Please check your email account.",
-                                                        Toast.LENGTH_SHORT)
-                                                        .show();
-                                            }
-                                            dialogInterface.dismiss();
-                                            finish();
-                                        }
-                                    })
-                                    .setNegativeButton("Later", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-                                            dialogInterface.dismiss();
-                                            finish();
-                                        }
-                                    })
-                                    .show();
-                        } else {
-                            Toast.makeText(RegisterActivity.this, "Error in registering your account",
-                                    Toast.LENGTH_SHORT).show();
-                        }
+                registerResponse -> {
+                    hideRegisteringUi();
+                    if (registerResponse.success) {
+                        new AlertDialog.Builder(RegisterActivity.this)
+                                .setTitle(R.string.prompt_verify_email)
+                                .setMessage(R.string.verify_email_message)
+                                .setPositiveButton("Verify", (dialog, which) -> {
+                                    Uri url = Uri.parse(registerResponse.url);
+                                    Intent intent = new Intent(Intent.ACTION_VIEW, url);
+                                    if (intent.resolveActivity(getPackageManager()) != null) {
+                                        startActivity(intent);
+                                    } else {
+                                        Toast.makeText(RegisterActivity.this,
+                                                "Cannot open your browser. Please check your email account.",
+                                                Toast.LENGTH_SHORT)
+                                                .show();
+                                    }
+                                    dialog.dismiss();
+                                    finish();
+                                })
+                                .setNegativeButton("Later", (dialog, which) -> {
+                                    dialog.dismiss();
+                                    finish();
+                                })
+                                .show();
+                    } else {
+                        Toast.makeText(RegisterActivity.this, "Error in registering your account",
+                                Toast.LENGTH_SHORT).show();
                     }
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.e(TAG, "register", throwable);
-                        if (throwable instanceof HttpException) {
-                            HttpException exception = (HttpException) throwable;
-                            HttpError error = HttpErrorUtils.convert(exception);
-                            Log.d(TAG, "error: " + error.method);
-                            Log.d(TAG, "error: " + error.err.message);
-                            Log.d(TAG, "error: " + error.err.name);
-                            if (error.err.name.equals("UserExistsError"))
-                                Toast.makeText(RegisterActivity.this, "The email address is used already",
-                                        Toast.LENGTH_SHORT).show();
-                            else
-                                Toast.makeText(RegisterActivity.this, "Error in registering your account",
-                                        Toast.LENGTH_SHORT).show();
-                        } else {
+                throwable -> {
+                    Log.e(TAG, "register", throwable);
+                    if (throwable instanceof HttpException) {
+                        HttpException exception = (HttpException) throwable;
+                        HttpError error = HttpErrorUtils.convert(exception);
+                        Log.d(TAG, "error: " + error.method);
+                        Log.d(TAG, "error: " + error.err.message);
+                        Log.d(TAG, "error: " + error.err.name);
+                        if (error.err.name.equals("UserExistsError"))
+                            Toast.makeText(RegisterActivity.this, "The email address is used already",
+                                    Toast.LENGTH_SHORT).show();
+                        else
                             Toast.makeText(RegisterActivity.this, "Error in registering your account",
                                     Toast.LENGTH_SHORT).show();
-                        }
-                        hideRegisteringUi();
+                    } else {
+                        Toast.makeText(RegisterActivity.this, "Error in registering your account",
+                                Toast.LENGTH_SHORT).show();
                     }
+                    hideRegisteringUi();
                 });
     }
 

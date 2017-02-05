@@ -17,7 +17,7 @@ import com.example.zpiao1.excited.logic.OnTouchActionListener;
 
 public class EventImageFragment extends Fragment {
 
-    private static final String LOG_TAG = EventImageFragment.class.getSimpleName();
+    private static final String TAG = EventImageFragment.class.getSimpleName();
     private View mRootView;
     private SimpleEvent mSimpleEvent;
     private OnTouchActionListener mListener;
@@ -75,7 +75,8 @@ public class EventImageFragment extends Fragment {
 
             @Override
             public void onClick() {
-                getActivity().getSupportFragmentManager().beginTransaction()
+                getActivity().getSupportFragmentManager()
+                        .beginTransaction()
                         .setCustomAnimations(android.R.anim.fade_in, android.R.anim.fade_out,
                                 android.R.anim.fade_in, android.R.anim.fade_out)
                         .replace(R.id.fragment_container,

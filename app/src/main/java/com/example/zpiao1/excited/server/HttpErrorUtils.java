@@ -13,7 +13,8 @@ public class HttpErrorUtils {
     public static HttpError convert(HttpException exception) throws IOException {
         ResponseBody errorBody = exception.response().errorBody();
         Retrofit retrofit = ServerUtils.getRetrofit();
-        Converter<ResponseBody, HttpError> converter = retrofit.responseBodyConverter(HttpError.class, new Annotation[0]);
+        Converter<ResponseBody, HttpError> converter =
+                retrofit.responseBodyConverter(HttpError.class, new Annotation[0]);
         return converter.convert(errorBody);
     }
 }

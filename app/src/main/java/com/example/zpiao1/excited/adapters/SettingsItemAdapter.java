@@ -1,6 +1,5 @@
 package com.example.zpiao1.excited.adapters;
 
-import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,11 +20,9 @@ import java.util.List;
 public class SettingsItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private List<SettingsItem> mItems;
-    private Context mContext;
 
-    public SettingsItemAdapter(List<SettingsItem> items, Context context) {
+    public SettingsItemAdapter(List<SettingsItem> items) {
         mItems = items;
-        mContext = context;
     }
 
     @Override
@@ -46,14 +43,14 @@ public class SettingsItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         if (holder instanceof SingleLineViewHolder
                 && mItems.get(position) instanceof SingleLineSettingsItem) {
-            final SingleLineViewHolder singleLineHolder = (SingleLineViewHolder) holder;
+            SingleLineViewHolder singleLineHolder = (SingleLineViewHolder) holder;
             SingleLineSettingsItem item = (SingleLineSettingsItem) mItems.get(position);
             singleLineHolder.mView.setOnClickListener(item.getOnClickListener());
             singleLineHolder.mText.setText(item.getText());
             singleLineHolder.mIcon.setImageResource(item.getIconResource());
         } else if (holder instanceof TwoLinesViewHolder
                 && mItems.get(position) instanceof TwoLinesSettingsItem) {
-            final TwoLinesViewHolder twoLinesHolder = (TwoLinesViewHolder) holder;
+            TwoLinesViewHolder twoLinesHolder = (TwoLinesViewHolder) holder;
             TwoLinesSettingsItem item = (TwoLinesSettingsItem) mItems.get(position);
             twoLinesHolder.mView.setOnClickListener(item.getOnClickListener());
             twoLinesHolder.mText1.setText(item.getText1());
@@ -73,9 +70,9 @@ public class SettingsItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public class SingleLineViewHolder extends RecyclerView.ViewHolder {
-        public final View mView;
-        public final TextView mText;
-        public final ImageView mIcon;
+        public View mView;
+        public TextView mText;
+        public ImageView mIcon;
 
         public SingleLineViewHolder(View view) {
             super(view);
@@ -91,10 +88,10 @@ public class SettingsItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewH
     }
 
     public class TwoLinesViewHolder extends RecyclerView.ViewHolder {
-        public final View mView;
-        public final TextView mText1;
-        public final TextView mText2;
-        public final ImageView mIcon;
+        public View mView;
+        public TextView mText1;
+        public TextView mText2;
+        public ImageView mIcon;
 
         public TwoLinesViewHolder(View view) {
             super(view);

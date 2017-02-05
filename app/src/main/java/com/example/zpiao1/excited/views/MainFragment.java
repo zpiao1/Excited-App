@@ -22,7 +22,6 @@ import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.adapters.EventImagePagerAdapter;
 import com.example.zpiao1.excited.adapters.IconAdapter;
 import com.example.zpiao1.excited.data.CategoryIcon;
-import com.example.zpiao1.excited.data.SimpleEvent;
 import com.example.zpiao1.excited.logic.OnTouchActionListener;
 import com.example.zpiao1.excited.server.IEventRequest;
 import com.example.zpiao1.excited.server.ServerUtils;
@@ -31,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -250,20 +248,12 @@ public class MainFragment extends Fragment implements
                 .create(IEventRequest.class);
         ServerUtils.addToDisposable(mDisposable,
                 request.getEvents(buildEventSelection()),
-                new Consumer<List<SimpleEvent>>() {
-                    @Override
-                    public void accept(List<SimpleEvent> events) throws Exception {
-                        mPagerAdapter = new EventImagePagerAdapter(getChildFragmentManager(),
-                                events, MainFragment.this);
-                        mViewPager.setAdapter(mPagerAdapter);
-                    }
+                events -> {
+                    mPagerAdapter = new EventImagePagerAdapter(getChildFragmentManager(),
+                            events, MainFragment.this);
+                    mViewPager.setAdapter(mPagerAdapter);
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.e(TAG, "fetchEvents", throwable);
-                    }
-                });
+                throwable -> Log.e(TAG, "fetchEvents", throwable));
     }
 
     @Override

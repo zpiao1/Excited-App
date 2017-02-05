@@ -7,12 +7,12 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.RippleDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.ToggleButton;
 
@@ -47,8 +47,9 @@ public class IconAdapter extends ArrayAdapter<CategoryIcon> {
                     R.color.colorAccent));
     }
 
+    @NonNull
     @Override
-    public View getView(final int position, View convertView, ViewGroup parent) {
+    public View getView(int position, View convertView, @NonNull ViewGroup parent) {
 
         CategoryIcon categoryIcon = getItem(position);
         View categoryItem = convertView;
@@ -59,6 +60,9 @@ public class IconAdapter extends ArrayAdapter<CategoryIcon> {
         ToggleButton button = (ToggleButton) categoryItem.findViewById(R.id.icon);
         StateListDrawable drawable = new StateListDrawable();
         Context context = getContext();
+        if (categoryIcon == null) {
+            throw new NullPointerException("categoryIcon is null!");
+        }
         drawable.addState(STATE_CHECKED_FALSE,
                 ContextCompat.getDrawable(context, categoryIcon.getGreyImageId()));
         drawable.addState(STATE_CHECKED_TRUE,
@@ -70,12 +74,8 @@ public class IconAdapter extends ArrayAdapter<CategoryIcon> {
         button.setChecked(true);
 
         // MainActivity implements the CompoundButton.OnCheckedChangeListener()
-        button.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                mListener.onCategoryCheckedChanged(position, b);
-            }
-        });
+        button.setOnCheckedChangeListener(
+                (compoundButton, b) -> mListener.onCategoryCheckedChanged(position, b));
 
         TextView iconTag = (TextView) categoryItem.findViewById(R.id.icon_tag);
         iconTag.setText(categoryIcon.getTag());

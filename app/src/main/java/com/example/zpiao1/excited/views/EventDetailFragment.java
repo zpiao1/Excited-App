@@ -24,7 +24,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -34,10 +33,8 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.example.zpiao1.excited.BuildConfig;
 import com.example.zpiao1.excited.R;
-import com.example.zpiao1.excited.data.Event;
 import com.example.zpiao1.excited.server.IEventRequest;
 import com.example.zpiao1.excited.server.IUserRequest;
-import com.example.zpiao1.excited.server.LikesOrDislikesResponse;
 import com.example.zpiao1.excited.server.ServerUtils;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -65,7 +62,6 @@ import com.mikepenz.iconics.IconicsDrawable;
 import org.joda.time.DateTime;
 
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.functions.Consumer;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -147,13 +143,10 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
         mainActivity.setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) mRootView.findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        fab.setOnClickListener(view -> Snackbar
+                .make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                .setAction("Action", null)
+                .show());
 
         DrawerLayout drawer = (DrawerLayout) mainActivity.findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
@@ -192,13 +185,10 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
-        mGoogleMap.setOnMapLoadedCallback(new GoogleMap.OnMapLoadedCallback() {
-            @Override
-            public void onMapLoaded() {
-                mMapLoaded = true;
-                tryToGetEstimatedTime();
-                tryToSetupMapUi();
-            }
+        mGoogleMap.setOnMapLoadedCallback(() -> {
+            mMapLoaded = true;
+            tryToGetEstimatedTime();
+            tryToSetupMapUi();
         });
     }
 
@@ -309,13 +299,10 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
                         .color(Color.WHITE),
                 ActionItemBadge.BadgeStyles.RED.getStyle(),
                 Integer.MIN_VALUE,  // hide the badge
-                new ActionItemBadge.ActionItemBadgeListener() {
-                    @Override
-                    public boolean onOptionsItemSelected(MenuItem menu) {
-                        Log.d(TAG, "likes selected");
-                        getLikes();
-                        return true;
-                    }
+                menu1 -> {
+                    Log.d(TAG, "likes selected");
+                    getLikes();
+                    return true;
                 });
         ActionItemBadge.update(getActivity(),
                 menu.findItem(R.id.action_dislikes),
@@ -325,12 +312,9 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
                         .sizeDp(24),
                 ActionItemBadge.BadgeStyles.RED.getStyle(),
                 Integer.MIN_VALUE,  // hide the badge
-                new ActionItemBadge.ActionItemBadgeListener() {
-                    @Override
-                    public boolean onOptionsItemSelected(MenuItem menu) {
-                        Log.d(TAG, "dislikes selected");
-                        return true;
-                    }
+                menu1 -> {
+                    Log.d(TAG, "dislikes selected");
+                    return true;
                 });
     }
 
@@ -371,32 +355,25 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
                 .create(IEventRequest.class);
         ServerUtils.addToDisposable(mDisposable,
                 request.getEvent(mId),
-                new Consumer<Event>() {
-                    @Override
-                    public synchronized void accept(Event event) throws Exception {
-                        // Set up the UI
-                        mCollapsingToolbar.setTitle(event.title);
-                        mDetailCategory.setText(event.category);
-                        mDetailDate.setText(event.date);
-                        mDetailVenue.setText(event.venue);
-                        Glide.with(getActivity())
-                                .load(event.pictureUrl)
-                                .centerCrop()
-                                .into(mDetailEventImage);
-                        if (event.lat != null && event.lng != null)
-                            mDestLatLng = new LatLng(event.lat, event.lng);
-                        else
-                            mDestLatLng = null;
-                        mEventGotten = true;
-                        tryToGetEstimatedTime();
-                        tryToSetupMapUi();
-                    }
-                }, new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        Log.e(TAG, "getEvent()", throwable);
-                    }
-                });
+                event -> {
+                    // Set up the UI
+                    mCollapsingToolbar.setTitle(event.title);
+                    mDetailCategory.setText(event.category);
+                    mDetailDate.setText(event.date);
+                    mDetailVenue.setText(event.venue);
+                    Glide.with(getActivity())
+                            .load(event.pictureUrl)
+                            .centerCrop()
+                            .into(mDetailEventImage);
+                    if (event.lat != null && event.lng != null)
+                        mDestLatLng = new LatLng(event.lat, event.lng);
+                    else
+                        mDestLatLng = null;
+                    mEventGotten = true;
+                    tryToGetEstimatedTime();
+                    tryToSetupMapUi();
+                },
+                throwable -> Log.e(TAG, "getEvent()", throwable));
     }
 
     private void tryToGetEstimatedTime() {
@@ -413,31 +390,28 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
         }
     }
 
-    private void requestEstimatedTime(final TravelMode mode) {
+    private void requestEstimatedTime(TravelMode mode) {
         DistanceMatrixApi.newRequest(mGeoApiContext)
                 .origins(mCurLatLng)
                 .destinations(mDestLatLng)
                 .mode(mode)
-                .departureTime(DateTime.now().plus(2 * 60 * 1000L)) // 5 minutes later
+                .departureTime(DateTime.now().plus(2 * 60 * 1000L)) // 2 minutes later
                 .setCallback(new PendingResult.Callback<DistanceMatrix>() {
                     @Override
                     public synchronized void onResult(DistanceMatrix result) {
                         DistanceMatrixRow[] rows = result.rows;
-                        final DistanceMatrixElement element = rows[0].elements[0];
-                        final Duration duration = element.duration;
-                        final Duration durationInTraffic = element.durationInTraffic;
-                        getActivity().runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (mode == TravelMode.DRIVING) {
-                                    if (durationInTraffic != null)
-                                        mDetailDrivingTime.setText(durationInTraffic.humanReadable);
-                                    else if (duration != null)
-                                        mDetailDrivingTime.setText(duration.humanReadable);
-                                } else if (mode == TravelMode.TRANSIT) {
-                                    if (duration != null)
-                                        mDetailTransitTime.setText(duration.humanReadable);
-                                }
+                        DistanceMatrixElement element = rows[0].elements[0];
+                        Duration duration = element.duration;
+                        Duration durationInTraffic = element.durationInTraffic;
+                        getActivity().runOnUiThread(() -> {
+                            if (mode == TravelMode.DRIVING) {
+                                if (durationInTraffic != null)
+                                    mDetailDrivingTime.setText(durationInTraffic.humanReadable);
+                                else if (duration != null)
+                                    mDetailDrivingTime.setText(duration.humanReadable);
+                            } else if (mode == TravelMode.TRANSIT) {
+                                if (duration != null)
+                                    mDetailTransitTime.setText(duration.humanReadable);
                             }
                         });
                     }
@@ -493,20 +467,12 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
                     .create(IUserRequest.class);
             ServerUtils.addToDisposable(mDisposable,
                     request.getLikes(id, token),
-                    new Consumer<LikesOrDislikesResponse>() {
-                        @Override
-                        public void accept(LikesOrDislikesResponse likesOrDislikesResponse) throws Exception {
-                            // TODO update the code to reflect change in likes
-                            String response = TextUtils.join(" ", likesOrDislikesResponse.events);
-                            Log.d(TAG, response);
-                        }
+                    likesOrDislikesResponse -> {
+                        // TODO update the code to reflect change in likes
+                        String response = TextUtils.join(" ", likesOrDislikesResponse.events);
+                        Log.d(TAG, response);
                     },
-                    new Consumer<Throwable>() {
-                        @Override
-                        public void accept(Throwable throwable) throws Exception {
-                            Log.e(TAG, "getLikes", throwable);
-                        }
-                    });
+                    throwable -> Log.e(TAG, "getLikes", throwable));
         }
     }
 

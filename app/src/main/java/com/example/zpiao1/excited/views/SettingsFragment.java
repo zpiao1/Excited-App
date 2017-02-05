@@ -1,7 +1,6 @@
 package com.example.zpiao1.excited.views;
 
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
@@ -88,7 +87,7 @@ public class SettingsFragment extends Fragment
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             final Bundle savedInstanceState) {
+                             Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_settings, container, false);
 
         Toolbar toolbar = (Toolbar) rootView.findViewById(R.id.toolbar);
@@ -111,7 +110,7 @@ public class SettingsFragment extends Fragment
         // Set the adapter
         recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
         recyclerView.setHasFixedSize(true);
-        mAdapter = new SettingsItemAdapter(mItems, getContext());
+        mAdapter = new SettingsItemAdapter(mItems);
         recyclerView.setAdapter(mAdapter);
 
         UserManager.subscribeForUser(SUBSCRIBE_ID, this);
@@ -121,88 +120,72 @@ public class SettingsFragment extends Fragment
     private void showChangeNameDialog() {
         LayoutInflater inflater = getActivity().getLayoutInflater();
         View contentView = inflater.inflate(R.layout.dialog_change_name, null);
-        final TextInputEditText changeNameText = (TextInputEditText)
+        TextInputEditText changeNameText = (TextInputEditText)
                 contentView.findViewById(R.id.change_name_text);
         changeNameText.setText(mUser != null ? mUser.getDisplayName() : null);
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         builder.setTitle(getString(R.string.pref_title_change_name))
                 .setIcon(R.drawable.ic_pen)
                 .setView(contentView)
-                .setPositiveButton("Submit", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int which) {
-                        String name = changeNameText.getText().toString();
-                        if (TextUtils.isEmpty(name) ||
-                                name.equals(mUser.getDisplayName())) {
-                            Toast.makeText(getContext(),
-                                    "Display Name is Not Changed.",
-                                    Toast.LENGTH_SHORT)
-                                    .show();
-                            dialogInterface.dismiss();
-                        } else {
-                            UserManager.changeUserName(name, getContext());
-                            dialogInterface.dismiss();
-                        }
+                .setPositiveButton("Submit", (dialog, which) -> {
+                    String name = changeNameText.getText().toString();
+                    if (TextUtils.isEmpty(name) ||
+                            name.equals(mUser.getDisplayName())) {
+                        Toast.makeText(getContext(),
+                                "Display Name is Not Changed.",
+                                Toast.LENGTH_SHORT)
+                                .show();
+                        dialog.dismiss();
+                    } else {
+                        UserManager.changeUserName(name, getContext());
+                        dialog.dismiss();
                     }
                 })
-                .setNegativeButton("Discard", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        dialogInterface.dismiss();
-                    }
-                })
+                .setNegativeButton("Discard", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
     private void showChangePasswordDialog() {
         LayoutInflater inflater = getActivity().getLayoutInflater();
         View contentView = inflater.inflate(R.layout.dialog_change_password, null);
-        final TextInputEditText originalPasswordText = (TextInputEditText)
+        TextInputEditText originalPasswordText = (TextInputEditText)
                 contentView.findViewById(R.id.original_password_text);
-        final TextInputLayout originalPasswordLayout = (TextInputLayout)
+        TextInputLayout originalPasswordLayout = (TextInputLayout)
                 contentView.findViewById(R.id.original_password_layout);
-        final TextInputEditText newPasswordText = (TextInputEditText)
+        TextInputEditText newPasswordText = (TextInputEditText)
                 contentView.findViewById(R.id.new_password_text);
-        final TextInputLayout newPasswordLayout = (TextInputLayout)
+        TextInputLayout newPasswordLayout = (TextInputLayout)
                 contentView.findViewById(R.id.new_password_layout);
-        final TextInputEditText newConfirmPasswordText = (TextInputEditText)
+        TextInputEditText newConfirmPasswordText = (TextInputEditText)
                 contentView.findViewById(R.id.new_confirm_password_text);
-        final TextInputLayout newConfirmPasswordLayout = (TextInputLayout)
+        TextInputLayout newConfirmPasswordLayout = (TextInputLayout)
                 contentView.findViewById(R.id.new_confirm_password_layout);
         new AlertDialog.Builder(getContext())
                 .setTitle(getString(R.string.pref_title_change_password))
                 .setIcon(R.drawable.ic_key)
                 .setView(contentView)
-                .setPositiveButton("Submit", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        AccountUtils.checkOriginalPassword(originalPasswordText,
-                                originalPasswordLayout);
-                        AccountUtils.checkNewPasswordAgainstOriginalPassword(
-                                newPasswordText,
-                                newPasswordLayout,
-                                originalPasswordText);
-                        AccountUtils.checkConfirmPasswordAgainstPassword(
-                                newConfirmPasswordText,
-                                newConfirmPasswordLayout,
-                                newPasswordText);
-                        if (originalPasswordLayout.getError() == null &&
-                                newPasswordLayout.getError() == null &&
-                                newConfirmPasswordLayout.getError() == null) {
-                            UserManager.changeUserPassword(originalPasswordText.getText()
-                                            .toString(),
-                                    newPasswordText.getText().toString(),
-                                    getContext());
-                            dialog.dismiss();
-                        }
-                    }
-                })
-                .setNegativeButton("Discard", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                .setPositiveButton("Submit", (dialog, which) -> {
+                    AccountUtils.checkOriginalPassword(originalPasswordText,
+                            originalPasswordLayout);
+                    AccountUtils.checkNewPasswordAgainstOriginalPassword(
+                            newPasswordText,
+                            newPasswordLayout,
+                            originalPasswordText);
+                    AccountUtils.checkConfirmPasswordAgainstPassword(
+                            newConfirmPasswordText,
+                            newConfirmPasswordLayout,
+                            newPasswordText);
+                    if (originalPasswordLayout.getError() == null &&
+                            newPasswordLayout.getError() == null &&
+                            newConfirmPasswordLayout.getError() == null) {
+                        UserManager.changeUserPassword(originalPasswordText.getText()
+                                        .toString(),
+                                newPasswordText.getText().toString(),
+                                getContext());
                         dialog.dismiss();
                     }
                 })
+                .setNegativeButton("Discard", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
@@ -210,19 +193,16 @@ public class SettingsFragment extends Fragment
         new AlertDialog.Builder(getActivity())
                 .setTitle(R.string.pref_title_change_photo)
                 .setIcon(R.drawable.ic_photo_camera)
-                .setItems(R.array.photo_options, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        Log.d(TAG, "The " + which + " item is selected.");
-                        if (which == 0) {
-                            // Take Photo
-                            takePictures();
-                        } else if (which == 1) {
-                            // Your Photos
-                            selectPhotos();
-                        }
-                        dialog.dismiss();
+                .setItems(R.array.photo_options, (dialog, which) -> {
+                    Log.d(TAG, "The " + which + " item is selected.");
+                    if (which == 0) {
+                        // Take Photo
+                        takePictures();
+                    } else if (which == 1) {
+                        // Your Photos
+                        selectPhotos();
                     }
+                    dialog.dismiss();
                 })
                 .show();
     }
@@ -231,19 +211,10 @@ public class SettingsFragment extends Fragment
         new AlertDialog.Builder(getContext())
                 .setTitle("Disconnect from Facebook?")
                 .setIcon(R.drawable.ic_facebook)
-                .setPositiveButton("Disconnect", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        UserManager.unlinkFacebookAccount(getContext(),
-                                SettingsFragment.this);
-                    }
-                })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
+                .setPositiveButton("Disconnect",
+                        (dialog, which) -> UserManager.unlinkFacebookAccount(getContext(),
+                                SettingsFragment.this))
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
@@ -251,40 +222,32 @@ public class SettingsFragment extends Fragment
         new AlertDialog.Builder(getContext())
                 .setTitle("Connect to Facebook?")
                 .setIcon(R.drawable.ic_facebook)
-                .setPositiveButton("Connect", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        LoginManager manager = LoginManager.getInstance();
-                        manager.registerCallback(UserManager.getCallbackManager(),
-                                new FacebookCallback<LoginResult>() {
-                                    @Override
-                                    public void onSuccess(LoginResult result) {
-                                        Log.d(TAG, "Facebook Login Success");
-                                        UserManager.linkFacebookAccount(result,
-                                                getContext(),
-                                                SettingsFragment.this);
-                                    }
+                .setPositiveButton("Connect", (dialog, which) -> {
+                    LoginManager manager = LoginManager.getInstance();
+                    manager.registerCallback(UserManager.getCallbackManager(),
+                            new FacebookCallback<LoginResult>() {
+                                @Override
+                                public void onSuccess(LoginResult result) {
+                                    Log.d(TAG, "Facebook Login Success");
+                                    UserManager.linkFacebookAccount(result,
+                                            getContext(),
+                                            SettingsFragment.this);
+                                }
 
-                                    @Override
-                                    public void onCancel() {
-                                        Log.d(TAG, "Facebook Login Cancel");
-                                    }
+                                @Override
+                                public void onCancel() {
+                                    Log.d(TAG, "Facebook Login Cancel");
+                                }
 
-                                    @Override
-                                    public void onError(FacebookException error) {
-                                        Log.e(TAG, "Facebook Login Error", error);
-                                    }
-                                });
-                        manager.logInWithReadPermissions(SettingsFragment.this,
-                                Arrays.asList("email", "public_profile"));
-                    }
+                                @Override
+                                public void onError(FacebookException error) {
+                                    Log.e(TAG, "Facebook Login Error", error);
+                                }
+                            });
+                    manager.logInWithReadPermissions(SettingsFragment.this,
+                            Arrays.asList("email", "public_profile"));
                 })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
@@ -292,18 +255,9 @@ public class SettingsFragment extends Fragment
         new AlertDialog.Builder(getContext())
                 .setTitle("Connect to Google?")
                 .setIcon(R.drawable.ic_google_plus)
-                .setPositiveButton("Connect", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        UserManager.googleSignIn(mGoogleApiClient, SettingsFragment.this);
-                    }
-                })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
+                .setPositiveButton("Connect", (dialog, which) ->
+                        UserManager.googleSignIn(mGoogleApiClient, SettingsFragment.this))
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
@@ -311,20 +265,11 @@ public class SettingsFragment extends Fragment
         new AlertDialog.Builder(getContext())
                 .setTitle("Disconnect from Google?")
                 .setIcon(R.drawable.ic_google_plus)
-                .setPositiveButton("Disconnect", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                .setPositiveButton("Disconnect", (dialog, which) ->
                         UserManager.unlinkGoogleAccount(getContext(),
                                 mGoogleApiClient,
-                                SettingsFragment.this);
-                    }
-                })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
+                                SettingsFragment.this))
+                .setNegativeButton("Cancel", (dialog, which) -> dialog.dismiss())
                 .show();
     }
 
@@ -377,12 +322,7 @@ public class SettingsFragment extends Fragment
                 if (mChangePasswordItem == null) {
                     mChangePasswordItem = new SingleLineSettingsItem(R.drawable.ic_key,
                             getString(R.string.pref_title_change_password),
-                            new View.OnClickListener() {
-                                @Override
-                                public void onClick(View v) {
-                                    showChangePasswordDialog();
-                                }
-                            });
+                            v -> showChangePasswordDialog());
                 }
                 mItems.add(2, mChangePasswordItem);
             }
@@ -408,21 +348,11 @@ public class SettingsFragment extends Fragment
         mItems = new ArrayList<>();
         mChangePhotoItem = new SingleLineSettingsItem(R.drawable.ic_photo_camera,
                 getString(R.string.pref_title_change_photo),
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        showChangePhotoDialog();
-                    }
-                });
+                v -> showChangePhotoDialog());
         mChangeNameItem = new TwoLinesSettingsItem(R.drawable.ic_pen,
                 getString(R.string.pref_title_change_name),
                 mUser != null ? mUser.getDisplayName() : null,
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        showChangeNameDialog();
-                    }
-                });
+                v -> showChangeNameDialog());
 
         mFacebookItem = new SingleLineSettingsItem(R.drawable.ic_facebook,
                 getString(R.string.pref_title_link_facebook),
@@ -432,31 +362,10 @@ public class SettingsFragment extends Fragment
                 getString(R.string.pref_title_link_google),
                 mLinkGoogleListener);
 
-        mLinkFacebookListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showLinkFacebookDialog();
-            }
-        };
-        mUnlinkFacebookListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showUnlinkFacebookDialog();
-            }
-        };
-        mLinkGoogleListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showLinkGoogleDialog();
-            }
-        };
-
-        mUnlinkGoogleListener = new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showUnlinkGoogleDialog();
-            }
-        };
+        mLinkFacebookListener = v -> showLinkFacebookDialog();
+        mUnlinkFacebookListener = v -> showUnlinkFacebookDialog();
+        mLinkGoogleListener = v -> showLinkGoogleDialog();
+        mUnlinkGoogleListener = v -> showUnlinkGoogleDialog();
     }
 
     @Override

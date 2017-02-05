@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 
@@ -12,7 +11,6 @@ import com.example.zpiao1.excited.R;
 import com.example.zpiao1.excited.data.User;
 import com.example.zpiao1.excited.server.IUserRequest;
 import com.example.zpiao1.excited.server.LoginResponse;
-import com.example.zpiao1.excited.server.NormalResponse;
 import com.example.zpiao1.excited.server.ServerUtils;
 import com.facebook.AccessToken;
 import com.facebook.CallbackManager;
@@ -22,13 +20,10 @@ import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.common.api.Status;
 
 import java.io.File;
 import java.util.HashMap;
 
-import io.reactivex.functions.Consumer;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
@@ -83,72 +78,56 @@ public class UserManager {
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
         ServerUtils.wrapObservable(request.getUser(id, token),
-                new Consumer<User>() {
-                    @Override
-                    public void accept(User user) throws Exception {
-                        user.status = User.STATUS_LOGGED_IN;
-                        setUser(user);
-                    }
+                user -> {
+                    user.status = User.STATUS_LOGGED_IN;
+                    setUser(user);
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        mUserSubject.updateError(throwable);
-                    }
-                });
+                throwable -> mUserSubject.updateError(throwable));
     }
 
     public static CallbackManager getCallbackManager() {
         return mCallbackManager;
     }
 
-    public static void logOut(final Context context,
-                              final GoogleApiClient client,
-                              final UserActivityHandler handler) {
-        final SharedPreferences prefs = context.getSharedPreferences(
+    public static void logOut(Context context,
+                              GoogleApiClient client,
+                              UserActivityHandler handler) {
+        SharedPreferences prefs = context.getSharedPreferences(
                 context.getString(R.string.shared_pref_name_server),
                 Context.MODE_PRIVATE);
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
         ServerUtils.wrapObservable(request.logOut(),
-                new Consumer<NormalResponse>() {
-                    @Override
-                    public void accept(NormalResponse response) throws Exception {
-                        Log.d(TAG, "logout " + response.success);
-                        if (response.success) {
-                            SharedPreferences.Editor editor = prefs.edit();
-                            editor.remove(context.getString(R.string.pref_token_key));
-                            editor.remove(context.getString(R.string.pref_id_key));
-                            // Remove the email logged in key
-                            if (prefs.contains(
-                                    context.getString(R.string.pref_has_email_logged_in_key))) {
-                                editor.remove(
-                                        context.getString(R.string.pref_has_email_logged_in_key));
-                            }
-                            editor.commit();
-                            if (hasFacebookLoggedIn()) {
-                                facebookLogOut();
-                            }
-                            if (hasGoogleSignedIn(context)) {
-                                googleSignOut(context, client, handler);
-                            }
-
-                            User loggedOutUser = new User();
-                            loggedOutUser.status = User.STATUS_LOGGED_OUT;
-                            setUser(loggedOutUser);
-                            handler.onSuccess(UserActivityHandler.LOG_OUT_SUCCESSFUL);
-                        } else {
-                            handler.onFail(new Exception(response.status),
-                                    UserActivityHandler.LOG_OUT_FAILED);
+                response -> {
+                    Log.d(TAG, "logout " + response.success);
+                    if (response.success) {
+                        SharedPreferences.Editor editor = prefs.edit();
+                        editor.remove(context.getString(R.string.pref_token_key));
+                        editor.remove(context.getString(R.string.pref_id_key));
+                        // Remove the email logged in key
+                        if (prefs.contains(
+                                context.getString(R.string.pref_has_email_logged_in_key))) {
+                            editor.remove(
+                                    context.getString(R.string.pref_has_email_logged_in_key));
                         }
+                        editor.apply();
+                        if (hasFacebookLoggedIn()) {
+                            facebookLogOut();
+                        }
+                        if (hasGoogleSignedIn(context)) {
+                            googleSignOut(context, client, handler);
+                        }
+
+                        User loggedOutUser = new User();
+                        loggedOutUser.status = User.STATUS_LOGGED_OUT;
+                        setUser(loggedOutUser);
+                        handler.onSuccess(UserActivityHandler.LOG_OUT_SUCCESSFUL);
+                    } else {
+                        handler.onFail(new Exception(response.status),
+                                UserActivityHandler.LOG_OUT_FAILED);
                     }
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        handler.onFail(throwable, UserActivityHandler.LOG_OUT_FAILED);
-                    }
-                });
+                throwable -> handler.onFail(throwable, UserActivityHandler.LOG_OUT_FAILED));
     }
 
     private static void facebookLogOut() {
@@ -157,29 +136,26 @@ public class UserManager {
         }
     }
 
-    private static void googleSignOut(final Context context,
+    private static void googleSignOut(Context context,
                                       GoogleApiClient client,
-                                      final UserActivityHandler handler) {
+                                      UserActivityHandler handler) {
         if (!hasGoogleSignedIn(context)) {
             handler.onFail(new IllegalStateException("User has not signed in Google account!"),
                     UserActivityHandler.GOOGLE_SIGN_IN_FAILED);
             return;
         }
-        Auth.GoogleSignInApi.signOut(client).setResultCallback(new ResultCallback<Status>() {
-            @Override
-            public void onResult(@NonNull Status status) {
-                if (status.isSuccess()) {
-                    SharedPreferences prefs = context.getSharedPreferences(
-                            context.getString(R.string.shared_pref_name_server),
-                            Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.remove(context.getString(R.string.pref_has_google_signed_in_key));
-                    editor.apply();
-                    handler.onSuccess(UserActivityHandler.GOOGLE_SIGN_OUT_SUCCESSFUL);
-                } else {
-                    handler.onFail(new Exception(status.getStatusMessage()),
-                            UserActivityHandler.GOOGLE_SIGN_OUT_FAILED);
-                }
+        Auth.GoogleSignInApi.signOut(client).setResultCallback(status -> {
+            if (status.isSuccess()) {
+                SharedPreferences prefs = context.getSharedPreferences(
+                        context.getString(R.string.shared_pref_name_server),
+                        Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.remove(context.getString(R.string.pref_has_google_signed_in_key));
+                editor.apply();
+                handler.onSuccess(UserActivityHandler.GOOGLE_SIGN_OUT_SUCCESSFUL);
+            } else {
+                handler.onFail(new Exception(status.getStatusMessage()),
+                        UserActivityHandler.GOOGLE_SIGN_OUT_FAILED);
             }
         });
     }
@@ -281,79 +257,54 @@ public class UserManager {
     }
 
     private static void signInGoogleToServer(String idToken,
-                                             final UserActivityHandler handler,
-                                             final Context context) {
+                                             UserActivityHandler handler,
+                                             Context context) {
         Log.d(TAG, "Google ID Token: " + idToken);
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
         ServerUtils.wrapObservable(request.googleSignIn(idToken),
-                new Consumer<LoginResponse>() {
-                    @Override
-                    public void accept(LoginResponse response) throws Exception {
-                        handleLoginResponse(response, handler, context);
-                    }
-                },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        handler.onFail(throwable, UserActivityHandler.LOG_IN_FAILED);
-                    }
-                });
+                response -> handleLoginResponse(response, handler, context),
+                throwable -> handler.onFail(throwable, UserActivityHandler.LOG_IN_FAILED));
     }
 
     public static void facebookLogIn(LoginResult result,
-                                     final UserActivityHandler handler,
-                                     final Context context) {
+                                     UserActivityHandler handler,
+                                     Context context) {
         String accessToken = result.getAccessToken().getToken();
         Log.d(TAG, "Facebook Access Token: " + accessToken);
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
         ServerUtils.wrapObservable(request.facebookLogin(accessToken),
-                new Consumer<LoginResponse>() {
-                    @Override
-                    public void accept(LoginResponse response) throws Exception {
-                        // save the token and user id to SharedPreferences to be used later
-                        handler.onSuccess(UserActivityHandler.FACEBOOK_LOG_IN_SUCCESSFUL);
-                        handleLoginResponse(response, handler, context);
-                    }
+                response -> {
+                    handler.onSuccess(UserActivityHandler.FACEBOOK_LOG_IN_SUCCESSFUL);
+                    handleLoginResponse(response, handler, context);
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        handler.onFail(throwable, UserActivityHandler.FACEBOOK_LOG_IN_FAILED);
-                    }
-                });
+                throwable -> handler.onFail(throwable, UserActivityHandler.FACEBOOK_LOG_IN_FAILED));
     }
 
     public static void emailLogIn(String email,
                                   String password,
-                                  final UserActivityHandler handler,
-                                  final Context context) {
+                                  UserActivityHandler handler,
+                                  Context context) {
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
         HashMap<String, Object> body = new HashMap<>();
         body.put("email", email);
         body.put("password", password);
         ServerUtils.wrapObservable(request.emailLogin(body),
-                new Consumer<LoginResponse>() {
-                    @Override
-                    public void accept(LoginResponse response) throws Exception {
-                        SharedPreferences prefs = context.getSharedPreferences(
-                                context.getString(R.string.shared_pref_name_server),
-                                Context.MODE_PRIVATE);
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putBoolean(context.getString(R.string.pref_has_email_logged_in_key), true);
-                        editor.commit();
-                        handler.onSuccess(UserActivityHandler.EMAIL_LOG_IN_SUCCESSFUL);
-                        handleLoginResponse(response, handler, context);
-                    }
+                response -> {
+                    SharedPreferences prefs = context.getSharedPreferences(
+                            context.getString(R.string.shared_pref_name_server),
+                            Context.MODE_PRIVATE);
+                    SharedPreferences.Editor editor = prefs.edit();
+                    editor.putBoolean(context.getString(R.string.pref_has_email_logged_in_key), true);
+                    editor.apply();
+                    handler.onSuccess(UserActivityHandler.EMAIL_LOG_IN_SUCCESSFUL);
+                    handleLoginResponse(response, handler, context);
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        handler.onFail(throwable, UserActivityHandler.LOG_IN_FAILED);
-                        handler.onFail(throwable, UserActivityHandler.EMAIL_LOG_IN_FAILED);
-                    }
+                throwable -> {
+                    handler.onFail(throwable, UserActivityHandler.LOG_IN_FAILED);
+                    handler.onFail(throwable, UserActivityHandler.EMAIL_LOG_IN_FAILED);
                 });
     }
 
@@ -368,7 +319,7 @@ public class UserManager {
         SharedPreferences.Editor editor = prefs.edit();
         editor.putString(context.getString(R.string.pref_token_key), response.token);
         editor.putString(context.getString(R.string.pref_id_key), response.id);
-        editor.commit();
+        editor.apply();
         handler.onSuccess(UserActivityHandler.LOG_IN_SUCCESSFUL);
     }
 
@@ -381,23 +332,15 @@ public class UserManager {
                 context.getString(R.string.shared_pref_name_server),
                 Context.MODE_PRIVATE);
         String token = prefs.getString(context.getString(R.string.pref_token_key), null);
-        HashMap<String, Object> map = new HashMap<>();
-        map.put("displayName", name);
+        HashMap<String, Object> body = new HashMap<>();
+        body.put("displayName", name);
         if (id != null && token != null)
-            ServerUtils.wrapObservable(request.changeName(id, token, map),
-                    new Consumer<User>() {
-                        @Override
-                        public void accept(User user) throws Exception {
-                            user.status = User.STATUS_LOGGED_IN;
-                            setUser(user);
-                        }
+            ServerUtils.wrapObservable(request.changeName(id, token, body),
+                    user -> {
+                        user.status = User.STATUS_LOGGED_IN;
+                        setUser(user);
                     },
-                    new Consumer<Throwable>() {
-                        @Override
-                        public void accept(Throwable throwable) throws Exception {
-                            mUserSubject.updateError(throwable);
-                        }
-                    });
+                    mUserSubject::updateError);
     }
 
     public static void changeUserPassword(String originalPassword,
@@ -411,35 +354,27 @@ public class UserManager {
         String token = prefs.getString(context.getString(R.string.pref_token_key), null);
         if (id == null || token == null)
             return;
-        HashMap<String, Object> map = new HashMap<>();
-        map.put("originalPassword", originalPassword);
-        map.put("password", password);
+        HashMap<String, Object> body = new HashMap<>();
+        body.put("originalPassword", originalPassword);
+        body.put("password", password);
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
-        ServerUtils.wrapObservable(request.changePassword(id, token, map),
-                new Consumer<NormalResponse>() {
-                    @Override
-                    public void accept(NormalResponse normalResponse) throws Exception {
-                        if (normalResponse.success) {
-                            User passwordChangedUser = new User();
-                            passwordChangedUser.status = User.STATUS_PASSWORD_CHANGED;
-                            setUser(passwordChangedUser);
-                        } else {
-                            mUserSubject.updateError(new Exception("Error in changing password"));
-                        }
+        ServerUtils.wrapObservable(request.changePassword(id, token, body),
+                normalResponse -> {
+                    if (normalResponse.success) {
+                        User passwordChangedUser = new User();
+                        passwordChangedUser.status = User.STATUS_PASSWORD_CHANGED;
+                        setUser(passwordChangedUser);
+                    } else {
+                        mUserSubject.updateError(new Exception("Error in changing password"));
                     }
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        mUserSubject.updateError(throwable);
-                    }
-                });
+                mUserSubject::updateError);
     }
 
     public static void linkFacebookAccount(LoginResult result,
                                            Context context,
-                                           final UserActivityHandler handler) {
+                                           UserActivityHandler handler) {
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
         SharedPreferences prefs = context.getSharedPreferences(
@@ -451,24 +386,16 @@ public class UserManager {
             return;
         ServerUtils.wrapObservable(request.linkFacebook(id, token,
                 result.getAccessToken().getToken()),
-                new Consumer<User>() {
-                    @Override
-                    public void accept(User user) throws Exception {
-                        user.status = User.STATUS_LOGGED_IN;
-                        setUser(user);
-                        handler.onSuccess(UserActivityHandler.LINK_FACEBOOK_SUCCESSFUL);
-                    }
+                user -> {
+                    user.status = User.STATUS_LOGGED_IN;
+                    setUser(user);
+                    handler.onSuccess(UserActivityHandler.LINK_FACEBOOK_SUCCESSFUL);
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        handler.onFail(throwable, UserActivityHandler.LINK_FACEBOOK_FAILED);
-                    }
-                });
+                throwable -> handler.onFail(throwable, UserActivityHandler.LINK_FACEBOOK_FAILED));
     }
 
     public static void unlinkFacebookAccount(Context context,
-                                             final UserActivityHandler handler) {
+                                             UserActivityHandler handler) {
         facebookLogOut();
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
@@ -483,32 +410,26 @@ public class UserManager {
             return;
         }
         ServerUtils.wrapObservable(request.unlinkFacebook(id, token),
-                new Consumer<NormalResponse>() {
-                    @Override
-                    public void accept(NormalResponse normalResponse) throws Exception {
-                        if (normalResponse.success) {
-                            mUser.status = User.STATUS_LOGGED_IN;
-                            mUser.facebookProfile = null;
-                            setUser(mUser);
-                            handler.onSuccess(UserActivityHandler.UNLINK_FACEBOOK_SUCCESSFUL);
-                        } else {
-                            mUserSubject.updateError(new Exception("Failed to log out from Facebook"));
-                        }
+                normalResponse -> {
+                    if (normalResponse.success) {
+                        mUser.status = User.STATUS_LOGGED_IN;
+                        mUser.facebookProfile = null;
+                        setUser(mUser);
+                        handler.onSuccess(UserActivityHandler.UNLINK_FACEBOOK_SUCCESSFUL);
+                    } else {
+                        mUserSubject.updateError(new Exception("Failed to log out from Facebook"));
                     }
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        mUserSubject.updateError(throwable);
-                        handler.onFail(throwable, UserActivityHandler.UNLINK_FACEBOOK_FAILED);
-                    }
+                throwable -> {
+                    mUserSubject.updateError(throwable);
+                    handler.onFail(throwable, UserActivityHandler.UNLINK_FACEBOOK_FAILED);
                 });
     }
 
 
     public static void linkGoogleAccount(GoogleSignInResult result,
                                          Context context,
-                                         final UserActivityHandler handler) {
+                                         UserActivityHandler handler) {
         if (!result.isSuccess()) {
             handler.onFail(new Exception("Failed to Sign In to Google"),
                     UserActivityHandler.LINK_GOOGLE_FAILED);
@@ -525,7 +446,7 @@ public class UserManager {
 
     private static void linkGoogleOnServer(String idToken,
                                            Context context,
-                                           final UserActivityHandler handler) {
+                                           UserActivityHandler handler) {
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
         SharedPreferences prefs = context.getSharedPreferences(
@@ -539,50 +460,41 @@ public class UserManager {
             return;
         }
         ServerUtils.wrapObservable(request.linkGoogle(id, token, idToken),
-                new Consumer<User>() {
-                    @Override
-                    public void accept(User user) throws Exception {
-                        user.status = User.STATUS_LOGGED_IN;
-                        setUser(user);
-                        handler.onSuccess(UserActivityHandler.LINK_GOOGLE_SUCCESSFUL);
-                    }
+                user -> {
+                    user.status = User.STATUS_LOGGED_IN;
+                    setUser(user);
+                    handler.onSuccess(UserActivityHandler.LINK_GOOGLE_SUCCESSFUL);
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        mUserSubject.updateError(throwable);
-                        handler.onFail(throwable, UserActivityHandler.LINK_GOOGLE_FAILED);
-                    }
+                throwable -> {
+                    mUserSubject.updateError(throwable);
+                    handler.onFail(throwable, UserActivityHandler.LINK_GOOGLE_FAILED);
                 });
     }
 
-    public static void unlinkGoogleAccount(final Context context,
-                                           final GoogleApiClient client,
-                                           final UserActivityHandler handler) {
+    public static void unlinkGoogleAccount(Context context,
+                                           GoogleApiClient client,
+                                           UserActivityHandler handler) {
         if (!hasGoogleSignedIn(context)) {
             handler.onFail(new IllegalStateException("User has not signed in Google account!"),
                     UserActivityHandler.UNLINK_GOOGLE_FAILED);
         }
-        Auth.GoogleSignInApi.signOut(client).setResultCallback(new ResultCallback<Status>() {
-            @Override
-            public void onResult(@NonNull Status status) {
-                if (status.isSuccess()) {
-                    SharedPreferences prefs = context.getSharedPreferences(
-                            context.getString(R.string.shared_pref_name_server),
-                            Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = prefs.edit();
-                    editor.remove(context.getString(R.string.pref_has_google_signed_in_key));
-                    editor.apply();
-                    unlinkGoogleOnServer(context, handler);
-                } else {
-                    handler.onFail(new Exception(status.getStatusMessage()),
-                            UserActivityHandler.UNLINK_GOOGLE_FAILED);
-                }
+        Auth.GoogleSignInApi.signOut(client).setResultCallback(status -> {
+            if (status.isSuccess()) {
+                SharedPreferences prefs = context.getSharedPreferences(
+                        context.getString(R.string.shared_pref_name_server),
+                        Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.remove(context.getString(R.string.pref_has_google_signed_in_key));
+                editor.apply();
+                unlinkGoogleOnServer(context, handler);
+            } else {
+                handler.onFail(new Exception(status.getStatusMessage()),
+                        UserActivityHandler.UNLINK_GOOGLE_FAILED);
             }
         });
     }
 
-    private static void unlinkGoogleOnServer(Context context, final UserActivityHandler handler) {
+    private static void unlinkGoogleOnServer(Context context, UserActivityHandler handler) {
         SharedPreferences prefs = context.getSharedPreferences(context.getString(R.string.shared_pref_name_server),
                 Context.MODE_PRIVATE);
         String id = prefs.getString(context.getString(R.string.pref_id_key), null);
@@ -594,26 +506,18 @@ public class UserManager {
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
         ServerUtils.wrapObservable(request.unlinkGoogle(id, token),
-                new Consumer<NormalResponse>() {
-                    @Override
-                    public void accept(NormalResponse normalResponse) throws Exception {
-                        if (normalResponse.success) {
-                            mUser.googleProfile = null;
-                            mUser.status = User.STATUS_LOGGED_IN;
-                            setUser(mUser);
-                            handler.onSuccess(UserActivityHandler.UNLINK_GOOGLE_SUCCESSFUL);
-                        } else {
-                            handler.onFail(new Exception("Server error"),
-                                    UserActivityHandler.UNLINK_GOOGLE_FAILED);
-                        }
+                normalResponse -> {
+                    if (normalResponse.success) {
+                        mUser.googleProfile = null;
+                        mUser.status = User.STATUS_LOGGED_IN;
+                        setUser(mUser);
+                        handler.onSuccess(UserActivityHandler.UNLINK_GOOGLE_SUCCESSFUL);
+                    } else {
+                        handler.onFail(new Exception("Server error"),
+                                UserActivityHandler.UNLINK_GOOGLE_FAILED);
                     }
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        handler.onFail(throwable, UserActivityHandler.UNLINK_GOOGLE_FAILED);
-                    }
-                });
+                throwable -> handler.onFail(throwable, UserActivityHandler.UNLINK_GOOGLE_FAILED));
     }
 
     public static void uploadImage(Context context, File imageFile) {
@@ -635,19 +539,11 @@ public class UserManager {
         IUserRequest request = ServerUtils.getRetrofit()
                 .create(IUserRequest.class);
         ServerUtils.wrapObservable(request.uploadImage(id, token, imageBody),
-                new Consumer<User>() {
-                    @Override
-                    public void accept(User user) throws Exception {
-                        user.status = User.STATUS_LOGGED_IN;
-                        setUser(user);
-                    }
+                user -> {
+                    user.status = User.STATUS_LOGGED_IN;
+                    setUser(user);
                 },
-                new Consumer<Throwable>() {
-                    @Override
-                    public void accept(Throwable throwable) throws Exception {
-                        mUserSubject.updateError(throwable);
-                    }
-                });
+                mUserSubject::updateError);
     }
 
     public interface UserActivityHandler {
