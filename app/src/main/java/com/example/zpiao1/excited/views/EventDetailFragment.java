@@ -55,6 +55,7 @@ import com.google.maps.model.DistanceMatrixRow;
 import com.google.maps.model.Duration;
 import com.google.maps.model.LatLng;
 import com.google.maps.model.TravelMode;
+import com.jakewharton.rxbinding2.view.RxView;
 import com.mikepenz.actionitembadge.library.ActionItemBadge;
 import com.mikepenz.google_material_typeface_library.GoogleMaterial;
 import com.mikepenz.iconics.IconicsDrawable;
@@ -143,10 +144,14 @@ public class EventDetailFragment extends Fragment implements OnMapReadyCallback,
         mainActivity.setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) mRootView.findViewById(R.id.fab);
-        fab.setOnClickListener(view -> Snackbar
-                .make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+        RxView.clicks(fab).subscribe(obj -> Snackbar
+                .make(fab, "Replace with you own actino", Snackbar.LENGTH_LONG)
                 .setAction("Action", null)
                 .show());
+//        fab.setOnClickListener(view -> Snackbar
+//                .make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                .setAction("Action", null)
+//                .show());
 
         DrawerLayout drawer = (DrawerLayout) mainActivity.findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
