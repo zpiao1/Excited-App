@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+      xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_likes"
+        android:id="@+id/action_interested"
         android:orderInCategory="10"
         android:title="@string/title_interested"
         app:actionLayout="@layout/menu_action_item_badge"
-        app:showAsAction="always" />
+        app:showAsAction="always"/>
 
     <item
-        android:id="@+id/action_dislikes"
+        android:id="@+id/action_uninterested"
         android:orderInCategory="20"
         android:title="@string/title_uninterested"
         app:actionLayout="@layout/menu_action_item_badge"
-        app:showAsAction="always" />
+        app:showAsAction="always"/>
 
 </menu>

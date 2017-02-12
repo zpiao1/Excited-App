@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_likes"
+        android:id="@+id/action_interested"
         android:orderInCategory="10"
         android:title="@string/action_schedule"
         app:actionLayout="@layout/menu_action_item_badge"

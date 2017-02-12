@@ -24,9 +24,13 @@ public interface IUserRequest {
     @POST("users/google/")
     Observable<LoginResponse> googleSignIn(@Query("id_token") String idToken);
 
-    @GET("users/{id}/likes/")
-    Observable<LikesOrDislikesResponse> getLikes(@Path("id") String id,
-                                                 @Header("x-access-token") String token);
+    @GET("users/{id}/interested/")
+    Observable<EventListResponse> getInterestedEvents(@Path("id") String id,
+                                                      @Header("x-access-token") String token);
+
+    @GET("users/{id}/uninterested")
+    Observable<EventListResponse> getUninterestedEvents(@Path("id") String id,
+                                                        @Header("x-access-token") String token);
 
     @POST("users/register/")
     Observable<RegisterResponse> register(@Body HashMap<String, Object> body);

@@ -3,6 +3,8 @@ package com.example.zpiao1.excited.data;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.List;
+
 public class User {
     public static final int STATUS_INIT = 0;
     public static final int STATUS_LOGGED_IN = 1;
@@ -26,6 +28,13 @@ public class User {
     @SerializedName("hasLocalProfile")
     @Expose
     public Boolean hasLocalProfile;
+    @SerializedName("interested")
+    @Expose
+    public List<String> interested;
+    @SerializedName("uninterested")
+    @Expose
+    public List<String> uninterested;
+
     public int status = STATUS_INIT;
 
     public String getEmail() {
