@@ -4,21 +4,23 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 public class HttpError {
-    @SerializedName("method")
+
+  @SerializedName("method")
+  @Expose
+  public String method;
+
+  @SerializedName("err")
+  @Expose
+  public Err err;
+
+  public static class Err {
+
+    @SerializedName("name")
     @Expose
-    public String method;
+    public String name;
 
-    @SerializedName("err")
+    @SerializedName("message")
     @Expose
-    public Err err;
-
-    public static class Err {
-        @SerializedName("name")
-        @Expose
-        public String name;
-
-        @SerializedName("message")
-        @Expose
-        public String message;
-    }
+    public String message;
+  }
 }

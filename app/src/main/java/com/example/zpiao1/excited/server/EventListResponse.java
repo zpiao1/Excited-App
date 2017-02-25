@@ -2,11 +2,11 @@ package com.example.zpiao1.excited.server;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
-
 import java.util.List;
 
 public class EventListResponse {
-    @SerializedName("events")
-    @Expose
-    public List<String> events;
+
+  @SerializedName("events")
+  @Expose
+  public List<String> events;
 }

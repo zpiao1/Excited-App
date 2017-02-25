@@ -3,33 +3,34 @@ package com.example.zpiao1.excited.data;
 import android.view.View;
 
 public abstract class SettingsItem {
-    public static final int SINGLE_LINE_TYPE = 0;
 
-    public static final int TWO_LINES_TYPE = 1;
+  public static final int SINGLE_LINE_TYPE = 0;
 
-    protected int mIconResId;
-    protected View.OnClickListener mListener;
+  public static final int TWO_LINES_TYPE = 1;
 
-    public SettingsItem(int iconResId, View.OnClickListener listener) {
-        mIconResId = iconResId;
-        mListener = listener;
-    }
+  protected int mIconResId;
+  protected View.OnClickListener mListener;
 
-    abstract public int getViewType();
+  public SettingsItem(int iconResId, View.OnClickListener listener) {
+    mIconResId = iconResId;
+    mListener = listener;
+  }
 
-    public int getIconResource() {
-        return mIconResId;
-    }
+  abstract public int getViewType();
 
-    public void setIconResouce(int iconResId) {
-        mIconResId = iconResId;
-    }
+  public int getIconResource() {
+    return mIconResId;
+  }
 
-    public View.OnClickListener getOnClickListener() {
-        return mListener;
-    }
+  public void setIconResouce(int iconResId) {
+    mIconResId = iconResId;
+  }
 
-    public void setOnClickListener(View.OnClickListener mListener) {
-        this.mListener = mListener;
-    }
+  public View.OnClickListener getOnClickListener() {
+    return mListener;
+  }
+
+  public void setOnClickListener(View.OnClickListener mListener) {
+    this.mListener = mListener;
+  }
 }

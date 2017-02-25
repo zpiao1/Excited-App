@@ -1,55 +1,55 @@
 <resources>
-    <string name="app_name">Excited</string>
+  <string name="app_name">Excited</string>
 
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
+  <string name="navigation_drawer_open">Open navigation drawer</string>
+  <string name="navigation_drawer_close">Close navigation drawer</string>
 
-    <string name="nav_title_settings">Settings</string>
-    <string name="nav_title_log_out">Log Out</string>
-    <string name="nav_title_view_events">View Events</string>
-    <string name="nav_title_add_event">Add Event</string>
-    <string name="nav_title_log_in">Log In</string>
-    <string name="header_log_in">Log In</string>
+  <string name="nav_title_settings">Settings</string>
+  <string name="nav_title_log_out">Log Out</string>
+  <string name="nav_title_view_events">View Events</string>
+  <string name="nav_title_add_event">Add Event</string>
+  <string name="nav_title_log_in">Log In</string>
+  <string name="header_log_in">Log In</string>
 
-    <string name="action_settings">Settings</string>
-    <string name="action_schedule">Schedule</string>
-    <string name="action_removed">Removed Events</string>
-    <string name="action_login">Login</string>
+  <string name="action_settings">Settings</string>
+  <string name="action_schedule">Schedule</string>
+  <string name="action_removed">Removed Events</string>
+  <string name="action_login">Login</string>
 
-    <string name="title_activity_event_detail">EventDetailActivity</string>
-    <string name="venue">Venue: </string>
-    <string name="date">Date: </string>
+  <string name="title_activity_event_detail">EventDetailActivity</string>
+  <string name="venue">Venue: </string>
+  <string name="date">Date: </string>
 
-    <string name="time_not_available">Not Available</string>
+  <string name="time_not_available">Not Available</string>
 
-    <string name="title_activity_login">Sign in</string>
+  <string name="title_activity_login">Sign in</string>
 
-    <!-- Strings related to login -->
-    <string name="prompt_email">Email</string>
-    <string name="prompt_password">Password</string>
-    <string name="prompt_confirm_password">Confirm Password</string>
-    <string name="prompt_name">Name</string>
-    <string name="action_sign_in">Sign in</string>
-    <string name="action_sign_in_short">Sign in</string>
-    <string name="action_register">Register</string>
-    <string name="action_create_new_account">Create New Account</string>
-    <string name="error_invalid_email">This email address is invalid</string>
-    <string name="error_invalid_password">This password is too short</string>
-    <string name="error_incorrect_password">This password is incorrect</string>
-    <string name="error_field_required">This field is required</string>
+  <!-- Strings related to login -->
+  <string name="prompt_email">Email</string>
+  <string name="prompt_password">Password</string>
+  <string name="prompt_confirm_password">Confirm Password</string>
+  <string name="prompt_name">Name</string>
+  <string name="action_sign_in">Sign in</string>
+  <string name="action_sign_in_short">Sign in</string>
+  <string name="action_register">Register</string>
+  <string name="action_create_new_account">Create New Account</string>
+  <string name="error_invalid_email">This email address is invalid</string>
+  <string name="error_invalid_password">This password is too short</string>
+  <string name="error_incorrect_password">This password is incorrect</string>
+  <string name="error_field_required">This field is required</string>
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
-    <string name="password_visibility">Show Password</string>
+  <string name="password_visibility">Show Password</string>
 
-    <string name="shared_pref_name_server">server</string>
-    <string name="pref_token_key">token</string>
-    <string name="pref_id_key">id</string>
-    <string name="pref_display_name_key">display_name</string>
-    <string name="pref_has_google_signed_in_key">has_google_signed_in</string>
-    <string name="pref_has_email_logged_in_key">has_email_logged_in</string>
+  <string name="shared_pref_name_server">server</string>
+  <string name="pref_token_key">token</string>
+  <string name="pref_id_key">id</string>
+  <string name="pref_display_name_key">display_name</string>
+  <string name="pref_has_google_signed_in_key">has_google_signed_in</string>
+  <string name="pref_has_email_logged_in_key">has_email_logged_in</string>
 
-    <string name="prompt_verify_email">Verify your email now?</string>
+  <string name="prompt_verify_email">Verify your email now?</string>
     <string name="verify_email_message">Congratulations! You have registered with Excited! You may
         proceed to verify your email address now.</string>
 
@@ -62,34 +62,34 @@ Integer condimentum nibh risus, sit amet placerat urna luctus eget. Sed quis sem
 Aenean quis diam maximus, porttitor massa ac, aliquam tortor. Donec placerat pretium ex, sed porttitor ex vulputate eu. Praesent et libero aliquet, tincidunt enim et, blandit dolor. Phasellus congue consectetur finibus. Aliquam erat volutpat. Vestibulum vitae risus eros. Ut vulputate dolor id pellentesque auctor. Morbi dictum, tellus vel rutrum aliquet, dui purus ullamcorper quam, eget rhoncus dolor nisi et elit. Sed ac orci arcu. Duis iaculis luctus hendrerit. Maecenas quis diam at diam mattis fringilla vitae non mauris. Nulla ut commodo ligula, bibendum dapibus quam. Morbi lobortis risus nulla, eget viverra nulla consectetur in. Fusce molestie faucibus suscipit. Integer tempor venenatis hendrerit. In varius ante quam, et dapibus risus porttitor vel.
 
 Mauris eget fringilla orci. Maecenas luctus eros ullamcorper enim elementum, eleifend lacinia nisl suscipit. Pellentesque faucibus lorem dapibus, vestibulum neque vitae, volutpat tellus. Quisque cursus venenatis dolor non ullamcorper. Aliquam fermentum, risus at suscipit condimentum, mi est rhoncus urna, ut dapibus quam risus at purus. Pellentesque egestas ornare nibh eu condimentum. Maecenas at quam laoreet, euismod lorem quis, interdum odio. Nam suscipit vestibulum velit, vitae pellentesque purus imperdiet at. Phasellus ac blandit dui. Cras sollicitudin auctor nunc a egestas. Sed cursus in ex luctus accumsan. Phasellus nec mauris ac elit euismod vehicula. Donec quam augue, imperdiet vel augue a, volutpat pharetra libero. Sed sodales velit felis, eget tincidunt nisi eleifend et.</string>
-    <string name="title_activity_register">RegisterActivity</string>
+  <string name="title_activity_register">RegisterActivity</string>
 
-    <string name="pref_title_change_photo">Change Profile Photo</string>
-    <string name="pref_title_change_name">Change Name</string>
-    <string name="pref_title_change_password">Change Password</string>
-    <string name="pref_title_link_google">Link Google Account</string>
-    <string name="pref_title_unlink_google">Unlink Google Account</string>
-    <string name="pref_title_unlink_facebook">Unlink Facebook Account</string>
-    <string name="pref_title_link_facebook">Link Facebook Account</string>
+  <string name="pref_title_change_photo">Change Profile Photo</string>
+  <string name="pref_title_change_name">Change Name</string>
+  <string name="pref_title_change_password">Change Password</string>
+  <string name="pref_title_link_google">Link Google Account</string>
+  <string name="pref_title_unlink_google">Unlink Google Account</string>
+  <string name="pref_title_unlink_facebook">Unlink Facebook Account</string>
+  <string name="pref_title_link_facebook">Link Facebook Account</string>
 
-    <string name="pref_summ_change_name">Change your profile photo here.</string>
-    <string name="pref_hint_change_name">Name</string>
+  <string name="pref_summ_change_name">Change your profile photo here.</string>
+  <string name="pref_hint_change_name">Name</string>
 
-    <string name="change">Change</string>
-    <string name="discard">Discard</string>
-    <string name="prompt_original_password">Original Password</string>
-    <string name="prompt_new_password">New Password</string>
-    <string name="prompt_confirm_new_password">Confirm New Password</string>
+  <string name="change">Change</string>
+  <string name="discard">Discard</string>
+  <string name="prompt_original_password">Original Password</string>
+  <string name="prompt_new_password">New Password</string>
+  <string name="prompt_confirm_new_password">Confirm New Password</string>
 
-    <string name="progress_loading">Loading</string>
-    <string name="nav_title_events">Events</string>
-    <string name="nav_title_account">Account</string>
+  <string name="progress_loading">Loading</string>
+  <string name="nav_title_events">Events</string>
+  <string name="nav_title_account">Account</string>
 
-    <string-array name="photo_options">
-        <item>Take Photo</item>
-        <item>Your Photos</item>
-    </string-array>
+  <string-array name="photo_options">
+    <item>Take Photo</item>
+    <item>Your Photos</item>
+  </string-array>
 
-    <string name="title_interested">Interested</string>
-    <string name="title_uninterested">Uninterested</string>
+  <string name="title_interested">Interested</string>
+  <string name="title_uninterested">Uninterested</string>
 </resources>

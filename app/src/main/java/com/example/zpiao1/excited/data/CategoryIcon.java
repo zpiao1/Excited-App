@@ -1,25 +1,26 @@
 package com.example.zpiao1.excited.data;
 
 public class CategoryIcon {
-    private String mTag;
-    private int mImageId;
-    private int mGreyImageId;
 
-    public CategoryIcon(String tag, int imageId, int greyImageId) {
-        mTag = tag;
-        mImageId = imageId;
-        mGreyImageId = greyImageId;
-    }
+  private String mTag;
+  private int mImageId;
+  private int mGreyImageId;
 
-    public String getTag() {
-        return mTag;
-    }
+  public CategoryIcon(String tag, int imageId, int greyImageId) {
+    mTag = tag;
+    mImageId = imageId;
+    mGreyImageId = greyImageId;
+  }
 
-    public int getImageId() {
-        return mImageId;
-    }
+  public String getTag() {
+    return mTag;
+  }
 
-    public int getGreyImageId() {
-        return mGreyImageId;
-    }
+  public int getImageId() {
+    return mImageId;
+  }
+
+  public int getGreyImageId() {
+    return mGreyImageId;
+  }
 }
